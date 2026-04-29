@@ -1,0 +1,258 @@
+[
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/css/globals-no-tokens.css",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-e15ce369cd87972993b3ivp/content/nl-BE/Localization.strings?timestamp=1762931140",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/css/extensions/components.css",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/testdrive.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/dealer.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/tokens/2-latest/css/brands/amg.css",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/tokens/2-latest/css/brands/maybach.css",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-27b2c3e3fa18b785a3b3ivp/manifest.json",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/cmm-cookie-banner/2-latest/cookie-banner/p-ye7uXVWx.js",
+    "type": "script"
+  },
+  {
+    "name": "https://api.usercentrics.eu/translations/translations-nl.json",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-27b2c3e3fa18b785a3b3ivp/manifest.json",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-37b4f3a7892061f363b3ivp/manifest.json",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/emh-product-details/emh-product-details-8.348.17/client/index3.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/emh-product-details/emh-product-details-8.348.17/client/index-esm.js",
+    "type": "script"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-37b4f3a7892061f363b3ivp/manifest.json",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-27b2c3e3fa18b785a3b3ivp/content/en-GB/B2X.json?timestamp=1771521985",
+    "type": "fetch"
+  },
+  {
+    "name": "https://aggregator.service.usercentrics.eu/aggregate/nl?templates=0QVzRHXZX@4.2.7,2HVudLNyz@5.3.5,40xR6BXD_5Ai1c@1.3.3,4Dp8M7ByFZC6bm@1.12.2,6-qobRfu@3.2.6,ABsocZLBQ@8.5.5,B3xwXXd7y@1.6.60,BJ59EidsWQ@25.7.29,BJz7qNsdj-7@15.8.20,ByvxcNj_jWm@6.2.6,DFMU3uZtX@15.12.50,EUB92J07k@1.12.75,GHhG9kZWBELPvh@9.7.2,H1Vl5NidjWX@40.18.46,HkVMl54s_o-Q@5.1.7,HkocEodjb7@52.11.43,Ia0sSrYe-@1.0.8,J39GyuWQq@12.4.7,S1pcEj_jZX@21.10.11,T2jg1ucEu5Yjln@1.5.0,UrIZhsV9ivH-iD@5.6.11,XdGYN2BsK@1.59.170,Xl0HIOViY@1.0.14,Z44BUchg2Ec7ad@1.7.1,bj4wYfMTUtW98q@1.1.3,c5-Z5lIg4-thiu@1.14.0,mzhCR6Q8-@1.6.4,nQ90ZSbOB@1.1.3,pFaCf_bDZ@1.19.10,uQiyefbRi@16.2.10,wFxuQvYX8MhkWv@1.0.1",
+    "type": "fetch"
+  },
+  {
+    "name": "https://api.oneweb.mercedes-benz.com/mhb2b/emea/permissions/mhb2b/get-active-user-profile",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-37b4f3a7892061f363b3ivp/content/nl-BE/DO-NOT-DELETE-06-11-2025.json?timestamp=1772012358",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-37b4f3a7892061f363b3ivp/content/nl-BE/DO-NOT-DELETE-06-11-2025.json?timestamp=1772012358",
+    "type": "fetch"
+  },
+  {
+    "name": "https://i18n.oneweb.mercedes-benz.com/euw1-27b2c3e3fa18b785a3b3ivp/content/nl-BE/B2X.json?timestamp=1771521985",
+    "type": "fetch"
+  },
+  {
+    "name": "https://www.mercedes-benz.be/content/dam/united-kingdom/passengercars/online-contact-module/CFM00558.jpg/1763484078839.jpg?im=Crop%2Crect%3D%28620%2C0%2C2480%2C2480%29%3BResize%3D%28414%2C414%29%3BResize%3D%2867%29",
+    "type": "img"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/bds/chevron-down/16.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/chevron-right.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/bds/mail/24.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/bds/test-drive/24.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/bds/location-dealer/24.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/assets/4.15.0/icons/close.svg",
+    "type": "fetch"
+  },
+  {
+    "name": "https://eu.api.oneweb.mercedes-benz.com/profile-bff/profile/BE",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/cmm-cookie-banner/2-latest/cookie-banner/p-CODKJj5s.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/cmm-cookie-banner/2-latest/cookie-banner/p-B7Eqb6Yo.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/cmm-cookie-banner/2-latest/cookie-banner/p-Bbuoc73A.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/cmm-cookie-banner/2-latest/cookie-banner/p-I3lHxkBq.js",
+    "type": "script"
+  },
+  {
+    "name": "https://consent-api.service.consent.usercentrics.eu/consent/uw/3",
+    "type": "fetch"
+  },
+  {
+    "name": "https://api.oneweb.mercedes-benz.com/cmm-lab/v1/labels/findByLanguages?language=fr%2Cnl&settingsId=jKFq1zGms",
+    "type": "fetch"
+  },
+  {
+    "name": "https://api.oneweb.mercedes-benz.com/mhb2b/emea/permissions/mhb2b/get-active-user-profile",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://api.oneweb.mercedes-benz.com/iam/bff/um/config",
+    "type": "fetch"
+  },
+  {
+    "name": "https://api.oneweb.mercedes-benz.com/mhb2b/emea/permissions/mhb2b/get-active-user-profile",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://uct.service.usercentrics.eu/uct?v=1&sid=jKFq1zGms&t=1&abv=&r=https%3A%2F%2Fwww.mercedes-benz.be%2Fnl_BE%2Fpassengercars%2Fbuy%2Fnew-car%2Fproduct.html&cb=1772026128518",
+    "type": "img"
+  },
+  {
+    "name": "https://api.oneweb.mercedes-benz.com/cmm-cim/v1/settings/jKFq1zGms",
+    "type": "fetch"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/esm/wb-button-group_2.0b71ea92.entry.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/esm/wb-heading_2.0b71ea92.entry.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/esm/wb-button.0b71ea92.entry.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/esm/wb-link.0b71ea92.entry.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/emh-product-details/emh-product-details-8.348.17/client/vehicle_background_stage_3440-1123.webp",
+    "type": "img"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/esm/transform-tag-name.0b71ea92.js",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/esm/init-services.0b71ea92.js",
+    "type": "script"
+  },
+  {
+    "name": "https://consent-api.service.consent.usercentrics.eu/consent/uw/3",
+    "type": "fetch"
+  },
+  {
+    "name": "https://www.mercedes-benz.be/AE_4701842454/gtag/js?id=G-38LJSJTYP4&l=dataLayer_ow&cx=c&gtm=4e62n0&sign=9925d6afa192c49e80f8a406d07730d01c3910cec62ca69c0c38ed696fcb8371_20260225",
+    "type": "script"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/ats-personalization/latest/target_library_min_latest.js",
+    "type": "script"
+  },
+  {
+    "name": "https://uct.service.usercentrics.eu/uct?v=1&sid=jKFq1zGms&t=5&abv=&r=https%3A%2F%2Fwww.mercedes-benz.be%2Fnl_BE%2Fpassengercars%2Fbuy%2Fnew-car%2Fproduct.html&cb=1772026137316",
+    "type": "img"
+  },
+  {
+    "name": "https://assets.oneweb.mercedes-benz.com/plugin/ats-personalization/latest/modules/generic_helper.js",
+    "type": "script"
+  },
+  {
+    "name": "https://znsv34bdrhweacsj7-mercedesbenz.siteintercept.qualtrics.com/SIE/?Q_ZID=ZN_SV34BdRhWeacsj7",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/dxjsmodule/18.cc9d5d5f35eca24b0602.chunk.js?Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BRANDID=www.mercedes-benz.be",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/dxjsmodule/10.b47135e602602c1f0fa4.chunk.js?Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BRANDID=www.mercedes-benz.be",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/WRSiteInterceptEngine/Targeting.php?Q_ZoneID=ZN_SV34BdRhWeacsj7&Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/dxjsmodule/CoreModule.js?Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BRANDID=mercedesbenz",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/dxjsmodule/6.3b3ba21b4db588fcde6f.chunk.js?Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BRANDID=mercedesbenz",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/dxjsmodule/1.a7ba05709d4fb5baf710.chunk.js?Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BRANDID=mercedesbenz",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/dxjsmodule/FeedbackButtonModule.js?Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BRANDID=mercedesbenz",
+    "type": "script"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/WRSiteInterceptEngine/Asset.php?Module=SI_bBhx2LVXBBWPDUO&Version=105&Q_ORIGIN=https://www.mercedes-benz.be&Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BrandTier=&Q_ARCACHEVERSION=21&Q_BRANDDC=fra1",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/WRSiteInterceptEngine/Asset.php?Module=CR_7VZoa3MHKGleezQ&Version=73&Q_InterceptID=SI_bBhx2LVXBBWPDUO&Q_ORIGIN=https://www.mercedes-benz.be&Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&Q_BrandTier=&Q_ARCACHEVERSION=21&Q_BRANDDC=fra1",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/WRSiteInterceptEngine/?Q_Impress=1&Q_CID=CR_7VZoa3MHKGleezQ&Q_SIID=SI_bBhx2LVXBBWPDUO&Q_ASID=AS_26908429&Q_CLIENTVERSION=2.42.2&Q_CLIENTTYPE=web&r=1772026138017",
+    "type": "xmlhttprequest"
+  },
+  {
+    "name": "https://siteintercept.qualtrics.com/WRQualtricsShared/Graphics/siteintercept/wr-dialog-close-btn-black.png",
+    "type": "img"
+  }
+]

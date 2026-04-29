@@ -1,0 +1,1439 @@
+{
+  "allowLogin": true,
+  "availabilityNotification": {
+    "enabled": true,
+    "apiUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/subscription-service"
+  },
+  "checkout": {
+    "enablePriceBreakdown": true,
+    "isNewFocComponentEnabled": false,
+    "vccsInternalBackend": false,
+    "isNewCheckoutTemplateEnabled": false,
+    "isNewOrderCreationFlowEnabled": true,
+    "enablePaymentMethodStep": true,
+    "enablePaymentAsPenultimateStep": false,
+    "authentication": {
+      "enableGuestCheckout": true,
+      "loginType": "tunnel",
+      "registerButton": {
+        "redirectTo": "CIAM"
+      },
+      "loginRework": false
+    },
+    "deliveryMethods": {
+      "dealerSelectionStrategies": [],
+      "homeDeliveryAddressOption": "USER_ADDRESS",
+      "enableSelectionOfNearestDealer": false,
+      "showDeliveryCostWithPlusCharacter": true,
+      "hideDeliveryCostIfZero": true,
+      "enabledDeliveryModes": [
+        "pickup"
+      ],
+      "showSalesConsultant": false,
+      "showFreeTextField": false,
+      "setHomeDeliveryPartner": false,
+      "freeTextPattern": "^[a-zA-Z0-9 ]{1,128}$",
+      "showDealerInformationLocalized": false
+    },
+    "fincalc": {
+      "callerSummary": "marketplace",
+      "callerCalculator": "marketplace"
+    },
+    "mpay3ds2LibraryUrl": "https://api.mercedes-pay.io/integrations/3ds2/library.js",
+    "paymentOptions": {
+      "enabledPaymentOptions": [
+        "DIRECT_PAYMENT"
+      ],
+      "defaultPaymentOption": "DIRECT_PAYMENT",
+      "fincalcSummaryIds": {
+        "depositAmount": [
+          "deposit_amount",
+          "downPayment"
+        ],
+        "installment": [
+          "installment",
+          "monthlyInstallment",
+          "pmtGrossIncService"
+        ],
+        "periodMonths": [
+          "period_months",
+          "funding.duration",
+          "inputDuration"
+        ]
+      },
+      "enableFinancingForForeignPaymentAddress": false,
+      "showTransferCostsForFinance": false,
+      "paymentOptionInfoBoxEnable": true,
+      "enabledDownstreamPaymentModes": [
+        "DIRECT_PAYMENT"
+      ]
+    },
+    "personalData": {
+      "prefillForms": true,
+      "showContactFormForAllCompanyLegalForms": false,
+      "hideCustomerContextSwitch": false,
+      "showAdditionalInformation": false,
+      "showPrivateDataConsentCheckbox": false,
+      "useAddressPopulationHelper": false,
+      "companyLegalForms": {
+        "partnership": [
+          "PROPRIETARY"
+        ]
+      },
+      "controlAjvValidate": true
+    },
+    "nextSteps": {
+      "showNoticeBox": true,
+      "hideDeliveryCostIfZero": true,
+      "disableVOFSReservationFlow": false,
+      "useSelectAllLegalCheckbox": false,
+      "userAgreements": true,
+      "legalCheckboxes": {
+        "B2C": [
+          {
+            "label": "dcp.legalAcceptanceAdditional.privacy.paragraph",
+            "key": "privacy",
+            "optional": false
+          }
+        ],
+        "B2B": [
+          {
+            "label": "dcp.legalAcceptanceAdditional.privacy.paragraph",
+            "key": "privacy",
+            "optional": false
+          }
+        ]
+      },
+      "disableLocalePatch": false
+    },
+    "stockReservation": {
+      "pollingIntervalForReservation": 1000,
+      "pollingMaxAttempts": 90
+    },
+    "useAutoComplete": false,
+    "checkoutDetails": {
+      "showEmissionInformation": false,
+      "reservationFee": {
+        "hideFootnote": false,
+        "hideComponent": false
+      },
+      "miniPdp": {
+        "hideDetailsButton": false,
+        "displayFCISSummaryWidgetBreakdown": false,
+        "useSeamlessEquipmentSection": true
+      }
+    },
+    "returnToCheckout": false,
+    "showAbandonFeedbackModal": false,
+    "showDealerGroupName": false,
+    "showLegalNoteOnTop": false,
+    "enableNewCheckout": true,
+    "mPayLibraryUrl": "https://api.mercedes-pay.io/integrations/175bc7c8-b6ea-4dd0-8871-3ec36eb88175/library.js",
+    "useGSIDForVenice": false,
+    "filterCheckoutBERequests": false
+  },
+  "deepLinking": {
+    "apiKey": "a962fb95-e669-4377-812b-f66337d7def6",
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/dls/v1",
+    "showRelatedProducts": true
+  },
+  "cotdd": {
+    "enabled": false,
+    "authenticationType": [
+      "LOGGED_IN_USER"
+    ],
+    "b2c": {
+      "enabledForFinCalcProductOrDsPaymentMode": [
+        "FINANCING",
+        "LEASING"
+      ]
+    }
+  },
+  "crowdin": {
+    "projectId": "euw1-37b4f3a7892061f363b3ivp"
+  },
+  "commerceApiContext": "FOC",
+  "enableFiltersToggle": false,
+  "pdp": {
+    "useSpecificationHighlights": true,
+    "equipments": {
+      "showImages": true,
+      "excludedCategories": [
+        "VARIANTS"
+      ],
+      "useEquipmentsV2": true,
+      "applySimsearchRecommendation": true,
+      "decoupleStandardFromExtra": true
+    },
+    "extraCharacteristics": [],
+    "showContactSeller": false,
+    "showLeadForm": true,
+    "showSummaryWidget": true,
+    "showWltpOverlay": false,
+    "showNefzOverlay": false,
+    "showCheckout": true,
+    "showVehicleImagesLegalNotice": true,
+    "showEquipmentHighlights": true,
+    "showEnergyEfficiencyImage": false,
+    "showEquipmentsNote": false,
+    "showWishlistSaveButton": true,
+    "showVehicleNavigation": true,
+    "showSteeringWheelPosition": false,
+    "shareFeature": {
+      "b2c": {
+        "icon": true,
+        "email": "ALL",
+        "msteams": "ALL",
+        "whatsapp": "MOBILE"
+      },
+      "b2b": {
+        "icon": true,
+        "email": "ALL",
+        "msteams": "ALL",
+        "whatsapp": "MOBILE"
+      }
+    },
+    "showCrossSellingBeforeCheckout": false,
+    "showEquipmentSearch": true,
+    "showVinAndMileage": false,
+    "useMultiAccordionLayout": false,
+    "aemLeadFormData": {
+      "id": {
+        "nl-BE": {
+          "B2B": "3f5cdefd-1a90-3807-a20b-c298f1dd55d2",
+          "B2C": "66bf1196-3c85-3577-aa9c-d867ce605f84"
+        },
+        "fr-BE": {
+          "B2B": "804c5f1d-be84-34e4-80fd-cff5f698a4dd",
+          "B2C": "c10ef288-5d38-307a-ad3e-94c0048a8f72"
+        }
+      }
+    },
+    "preloadBundleEnabled": true,
+    "showVehicleMatchTeaser": false,
+    "vehicleEquipmentsSource": "enrichment",
+    "showDealerLocator": true,
+    "priceFirstPosition": "purchase",
+    "hiddenDealerLocatorElements": [
+      "dl-search-title",
+      "dl-dealer-cta-bar",
+      "dl-dealer-contacts",
+      "dl-list-dealer-more-info"
+    ],
+    "bffService": {
+      "enabled": false,
+      "apiUrl": "http://localhost:8080/v1/{{siteId}}/pdp"
+    },
+    "energyEfficiencyDisplayType": "NONE",
+    "showInlineBackButton": true,
+    "useInterior360Viewer": true,
+    "showAmgSoundModule": false,
+    "primaryTestProcedure": "wltp",
+    "showRetailerName": true,
+    "showDealerLocatorBeforeCheckout": true,
+    "showModelYear": true,
+    "useSeamlessEquipmentSection": true,
+    "showDealerSelectorOnLeadForm": false,
+    "vehicleTechnicalInformationBlacklist": [
+      "finalInspectionDate",
+      "typeClass",
+      "capacityWithReserve",
+      "reserveTankCapacity",
+      "turnCircle",
+      "luggageSpaceClosed",
+      "widthWithoutMirrors",
+      "widthWithRetractedMirrors",
+      "loadspaceVolume",
+      "luggageSpaceFrontSeat",
+      "luggageSpaceRearSeat",
+      "maximumTrailingLoadWithBrakes",
+      "maximumTrailingLoadWithoutBrakes",
+      "maximumWeightRoof",
+      "permissibleWeightAxleFront",
+      "permissibleWeightAxleBack",
+      "combinedKw",
+      "combinedHp",
+      "engineConcept",
+      "batteryCapacity",
+      "chargingCapacityAC",
+      "chargingCapacityDC",
+      "electricRangeCity",
+      "bootCapacityMin",
+      "bootCapacityMax",
+      "emissionStandard",
+      "fuelEfficiency"
+    ],
+    "specificationHighlightsBlacklist": [
+      "LOAD_VOLUME",
+      "BATTERY_CAPACITY",
+      "TRUNK_VOLUME"
+    ],
+    "hideImages": false,
+    "extraEquipmentSeparation": true
+  },
+  "srp": {
+    "enableDynamicPriceFiltering": false,
+    "useSlideInputs": false,
+    "preloadBundleEnabled": true,
+    "stockCategoriesTooltips": {
+      "DEMO": false,
+      "CPO": false
+    },
+    "products": {
+      "countThreshold": 500,
+      "useRtlOnAmountLabel": false,
+      "thresholdTemplate": "{n}+",
+      "showOnFilters": true
+    },
+    "locationFilter": {
+      "displayDealerSearch": true,
+      "displayLocationSearch": true,
+      "options": [
+        "5 Km",
+        "10 Km",
+        "25 Km",
+        "50 Km",
+        "100 Km"
+      ]
+    },
+    "bffService": {
+      "enabled": false,
+      "apiUrl": "http://localhost:8080/v1/{{siteId}}/srp/search"
+    },
+    "energyEfficiencyDisplayType": "none",
+    "showBenefits": false,
+    "showBenefitsB2b": false,
+    "showSummaryWidget": true,
+    "showWltpOverlay": false,
+    "showEnergyEfficiencyImage": false,
+    "showNefzOverlay": false,
+    "showContextBannerDealerName": false,
+    "showDealerName": true,
+    "showWarrantyStatus": false,
+    "showWishlistSaveButton": true,
+    "showSteeringWheelPosition": false,
+    "priceFirstPosition": "purchase",
+    "availableCategories": [
+      {
+        "carConfiguratorBanner": {
+          "linkUrl": "",
+          "localeLinks": {},
+          "showBanner": false
+        },
+        "filterBlacklist": {
+          "driveType": false,
+          "generation": false,
+          "height": true,
+          "loadingSpaceHeight": true,
+          "loadingSpaceLength": true,
+          "loadingSpaceVolume": true,
+          "loadingSpaceWidth": true,
+          "loadspaceHeight": true,
+          "loadspaceLength": true,
+          "loadspaceVolume": true,
+          "loadspaceWidth": true,
+          "maxLoad": true,
+          "maxWeight": true,
+          "modelYear": false,
+          "numberOfSeats": true,
+          "seats": true,
+          "torque": true,
+          "wheelbase": true
+        },
+        "name": "new-passenger-cars",
+        "sortBlacklist": {
+          "length-asc": true,
+          "length-desc": true,
+          "payload-asc": true,
+          "payload-desc": true
+        },
+        "type": "passenger"
+      },
+      {
+        "filterBlacklist": {
+          "driveType": true,
+          "generation": true,
+          "height": true,
+          "modelYear": true,
+          "motorization": true,
+          "torque": true,
+          "wheelbase": true
+        },
+        "name": "new-commercial-vans",
+        "sortBlacklist": {
+          "length-asc": false,
+          "length-desc": false,
+          "payload-asc": false,
+          "payload-desc": false
+        }
+      }
+    ],
+    "compareFeature": [
+      "cars-B2B",
+      "cars-B2C",
+      "vans-B2B",
+      "vans-B2C"
+    ],
+    "enableEchoVehicleTile": true,
+    "vehicleTileVersion": "0.162.1",
+    "primaryTestProcedure": "wltp",
+    "filters": {
+      "new-passenger-cars": [
+        {
+          "type": "CATEGORY",
+          "code": "vehicle",
+          "icon": "bds/car/16",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "BRAND",
+              "code": "brand",
+              "options": {
+                "hideSingleOption": true
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "modelIdentifier",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "motorization",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "BODY_TYPE",
+              "code": "bodyType"
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "stockType",
+          "icon": "bds/checkmark-circle/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CARD_SELECTION",
+              "code": "stockType",
+              "options": {
+                "columnsNumber": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "price",
+          "icon": "bds/calculator/24",
+          "elements": [
+            {
+              "type": "TAB_GROUP",
+              "code": "price",
+              "elements": [
+                {
+                  "type": "FILTER",
+                  "component": "PRICE_RANGE_SLIDER",
+                  "code": "price"
+                },
+                {
+                  "type": "FILTER",
+                  "component": "PRICE_RANGE_SLIDER",
+                  "code": "monthlyRate"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "campaigns",
+          "icon": "bds/special-offer/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "campaigns",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "engine",
+          "icon": "bds/engine/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "fuelType",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "driveType",
+              "options": {
+                "maxItems": 7,
+                "hideSingleOption": true
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CARD_SELECTION",
+              "code": "gearbox",
+              "options": {
+                "columnsNumber": 2,
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "enginePowerKW"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "combinedPower"
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "modelYear",
+          "icon": "bds/calendar/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "YEAR_RANGE",
+              "code": "modelYear",
+              "options": {
+                "allowEqualRange": true
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "upholstery",
+          "icon": "bds/seat/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "upholstery",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "upholsteryPolish",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "equipment",
+          "icon": "bds/wheel/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "packages",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "lines",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "equipment",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "color",
+          "icon": "bds/layers/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "colorPolish",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "color",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "location",
+          "icon": "bds/location/24",
+          "elements": [
+            {
+              "type": "TAB_GROUP",
+              "code": "location",
+              "elements": [
+                {
+                  "type": "FILTER",
+                  "component": "LOCATION_PICKER",
+                  "code": "location",
+                  "apiCode": "dealerId"
+                },
+                {
+                  "type": "FILTER",
+                  "component": "DEALER",
+                  "code": "dealerId"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "new-commercial-vans": [
+        {
+          "type": "CATEGORY",
+          "code": "vehicle",
+          "icon": "bds/van-frontal/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "BRAND",
+              "code": "brand",
+              "options": {
+                "hideSingleOption": true
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "modelIdentifier",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "BODY_TYPE",
+              "code": "bodyType",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "stockType",
+          "icon": "bds/checkmark-circle/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CARD_SELECTION",
+              "code": "stockType",
+              "options": {
+                "columnsNumber": 2
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "price",
+          "icon": "bds/calculator/24",
+          "elements": [
+            {
+              "type": "TAB_GROUP",
+              "code": "price",
+              "elements": [
+                {
+                  "type": "FILTER",
+                  "component": "PRICE_RANGE_SLIDER",
+                  "code": "price"
+                },
+                {
+                  "type": "FILTER",
+                  "component": "PRICE_RANGE_SLIDER",
+                  "code": "monthlyRate"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "campaigns",
+          "icon": "bds/special-offer/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "campaigns",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "engine",
+          "icon": "bds/engine/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "fuelType",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CARD_SELECTION",
+              "code": "gearbox",
+              "options": {
+                "columnsNumber": 2,
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "enginePowerKW"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "combinedPower"
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "transportUsage",
+          "icon": "bds/van-configuration/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "seats",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "payload"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "maximumWeight"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "loadspaceVolume"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "loadspaceLength"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "loadspaceWidth"
+            },
+            {
+              "type": "FILTER",
+              "component": "RANGE_SLIDER",
+              "code": "loadspaceHeight"
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "upholstery",
+          "icon": "bds/seat/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "upholstery",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "upholsteryPolish",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "equipment",
+          "icon": "bds/wheel/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "packages",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "lines",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "equipment",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "color",
+          "icon": "bds/layers/24",
+          "elements": [
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "colorPolish",
+              "options": {
+                "maxItems": 7
+              }
+            },
+            {
+              "type": "FILTER",
+              "component": "CHECKBOX_LIST",
+              "code": "color",
+              "options": {
+                "maxItems": 7
+              }
+            }
+          ]
+        },
+        {
+          "type": "CATEGORY",
+          "code": "location",
+          "icon": "bds/location/24",
+          "elements": [
+            {
+              "type": "TAB_GROUP",
+              "code": "location",
+              "elements": [
+                {
+                  "type": "FILTER",
+                  "component": "LOCATION_PICKER",
+                  "code": "location",
+                  "apiCode": "dealerId"
+                },
+                {
+                  "type": "FILTER",
+                  "component": "DEALER",
+                  "code": "dealerId"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "genAiLayer": {
+    "apiUrl": "https://eu.api.oneweb.mercedes-benz.com/pace/v1"
+  },
+  "oneDocUrl": {
+    "dev": "https://docms-int.i.mercedes-benz.com/oneDoCSPA/",
+    "int": "https://docms-int.i.mercedes-benz.com/oneDoCSPA/",
+    "preprod": "https://docms-int.i.mercedes-benz.com/oneDoCSPA/",
+    "prod": "https://docms.i.mercedes-benz.com/oneDoCSPA/"
+  },
+  "orderConfirmation": {
+    "maxNumberOfTries": 500,
+    "showCta": true,
+    "faqButton": {
+      "label": "",
+      "link": ""
+    },
+    "checkPendingPaymentStatus": false,
+    "showOrderConfirmationSurvey": false
+  },
+  "dealerLocator": {
+    "informative": {
+      "configId": "MarketplaceCore_Informative"
+    },
+    "preload": {
+      "configId": "MarketplaceCore_Informative_Preload"
+    },
+    "applicationId": "MRKTPLCCORE",
+    "configId": "MarketplaceCore_Selector",
+    "searchProfileName": "MarketplaceCore_PrivateVehicles",
+    "baseUrl": "https://api.oneweb.mercedes-benz.com/dlc-dms/v2",
+    "script": "https://assets.oneweb.mercedes-benz.com/plugin/dlc/one-dlc/2.x/onedlc.js",
+    "styles": "https://assets.oneweb.mercedes-benz.com/plugin/dlc/one-dlc/2.x/onedlc.css",
+    "widgetKey": "af7daa39-fa4a-4105-a990-ff5f75f511e2",
+    "blackListDealers": [],
+    "newCarsSearchProfiles": {
+      "van": "MarketplaceCore_ComercialVan",
+      "privateVan": "MarketplaceCore_PrivateVans",
+      "electric": "MarketplaceCore_NewCars",
+      "others": "MarketplaceCore_NewCars"
+    },
+    "bodyTypeSearchProfiles": [],
+    "enhancedAddressFieldsOrder": [
+      "line1",
+      "zipcode",
+      "city"
+    ],
+    "forceDealerSelection": false,
+    "api": {
+      "baseUrl": "https://api.oneweb.mercedes-benz.com/dms-plus/v3",
+      "widget": {
+        "script": "https://assets.oneweb.mercedes-benz.com/plugin/dlc/dlw/3.x/onedlc.js",
+        "styles": "https://assets.oneweb.mercedes-benz.com/plugin/dlc/dlw/3.x/onedlc.css"
+      },
+      "tenants": {
+        "productDetails": {
+          "apiKey": "9664bb34-f21e-4914-b754-5ed08a1f80d6",
+          "configId": "0025_EMHProductDetails-Selector",
+          "searchProfileName": "0025_EMHProductDetails-PrivateVehicles",
+          "informative": {
+            "configId": "0025_EMHProductDetails-Informative"
+          },
+          "preload": {
+            "configId": "0025_EMHProductDetails-Preload-Informative"
+          },
+          "newCarsSearchProfiles": {
+            "van": "0025_EMHProductDetails-ComercialVan",
+            "privateVan": "0025_EMHProductDetails-PrivateVans",
+            "electric": "0025_EMHProductDetails-NewCars",
+            "others": "0025_EMHProductDetails-NewCars"
+          }
+        },
+        "searchResults": {
+          "apiKey": "44561db6-c41b-4d96-b040-a2b909215291",
+          "configId": "0026_EMHSearchResults-Selector",
+          "searchProfileName": "0026_EMHSearchResults-PrivateVehicles",
+          "informative": {
+            "configId": "0026_EMHSearchResults-Informative"
+          },
+          "preload": {
+            "configId": "0026_EMHSearchResults-Preload-Informative"
+          },
+          "newCarsSearchProfiles": {
+            "van": "0026_EMHSearchResults-ComercialVan",
+            "privateVan": "0026_EMHSearchResults-PrivateVans",
+            "electric": "0026_EMHSearchResults-NewCars",
+            "others": "0026_EMHSearchResults-NewCars"
+          }
+        },
+        "checkout": {
+          "tenantId": "0027",
+          "apiKey": "cbfa70aa-a764-4ae0-9949-febb6361d95b",
+          "configId": "0027_EMHCheckout-Selector",
+          "searchProfileName": "0027_EMHCheckout-PrivateVehicles",
+          "informative": {
+            "configId": "0027_EMHCheckout-Informative"
+          },
+          "preload": {
+            "configId": "0027_EMHCheckout-Preload-Informative"
+          },
+          "newCarsSearchProfiles": {
+            "van": "0027_EMHCheckout-ComercialVan",
+            "privateVan": "0027_EMHCheckout-PrivateVans",
+            "electric": "0027_EMHCheckout-NewCars",
+            "others": "0027_EMHCheckout-NewCars"
+          }
+        }
+      }
+    },
+    "country": "BE",
+    "enforceLegalName": true,
+    "enableEnhancedAddress": false,
+    "enableEnhancedName": true
+  },
+  "tracking": {
+    "id": "emh",
+    "subId": "vehicles",
+    "assortmentType": "mid"
+  },
+  "apiBaseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/ocb/dcp-api",
+  "assortmentBaseCategoryMapping": {
+    "vehicle": "market-be-vehicles",
+    "accessory": "",
+    "tyres": ""
+  },
+  "availableLanguages": [
+    "nl-BE",
+    "fr-BE"
+  ],
+  "aemFormScript": "https://assets.oneweb.mercedes-benz.com/plugin/mbmxp-aemf-form-container/latest/loader.js",
+  "b2xCosApiUrl": "https://api.oneweb.mercedes-benz.com/cos/v1",
+  "ciamMode": "in-place",
+  "dataDog": {
+    "applicationId": "0d01aa22-74e0-429e-8e71-c7a4b548be3d",
+    "clientToken": "pubccc2dc3432a88fe87c6fada4efb26da2",
+    "enabled": true,
+    "proxyUrl": "https://places.mercedes-benz.com/dd-proxy/",
+    "platform": "nebula",
+    "site": "datadoghq.eu",
+    "service": "dcps-mrktplc-vehicles",
+    "tenantId": "EMH",
+    "env": "prod"
+  },
+  "defaultCurrency": "EUR",
+  "defaultLocale": "nl-be",
+  "defaultSortingOption": "price-asc",
+  "environment": "production",
+  "fincalc": {
+    "scriptUrl": "https://assets.oneweb.mercedes-benz.com/plugin/fcis-widget/latest/fcis-widget/fcis-widget.esm.js?v=4.46.0",
+    "enabledOn": {
+      "pdp": true,
+      "checkout": false
+    },
+    "environment": "production",
+    "callerSummary": "srp_emh",
+    "callerCalculator": "marketplace",
+    "waitPLC": false,
+    "widgetParameters": {
+      "useAdditionalParams": false
+    },
+    "modal": {
+      "label": ""
+    },
+    "useFincalcUiComponent": false
+  },
+  "logLevel": "error",
+  "microservices": {
+    "cias": {
+      "ciasURL": "https://api.oneweb.mercedes-benz.com/cias/v1/",
+      "tenantId": "mrktplc-core",
+      "disableBootSSO": false,
+      "prompt": "DEFAULT"
+    }
+  },
+  "showStockStatus": true,
+  "retailContext": true,
+  "shopBaseUrl": "/nl-be/cars",
+  "shopCountry": "BE",
+  "stepConfigurationUrl": "https://shop.mercedes-benz.com/{{locale}}/cars/pcp/dealer",
+  "storeFront": {
+    "homeUrlOptions": {
+      "B2C": "",
+      "B2B": ""
+    }
+  },
+  "siteId": "market-be",
+  "toasApiBaseUrl": "https://toas-api.mercedes-benz.com",
+  "translationApi": "https://i18n.oneweb.mercedes-benz.com/projects/35e68f8b5769ffbe51d5e3e245f7498f/locales/{{lng}}/download?file_format=i18next",
+  "footnotes": {
+    "isPilot": true,
+    "showDealerLocationFootnote": false,
+    "showFiscalValueFootnote": false,
+    "showHybridPowerFootnote": false,
+    "showNonIndexedFootnotes": true,
+    "showOrderProcessFootnote": false,
+    "showPriceFootnote": true,
+    "showPdpDealerFootnote": true
+  },
+  "authenticationRequiredUrls": [
+    "https://eu.api.oneweb.mercedes-benz.com/commerce/ocb/dcp-api"
+  ],
+  "checkoutUrl": "https://shop.mercedes-benz.com/{{locale}}/checkout/cart",
+  "shopHomeUrl": "https://shop.mercedes-benz.com/{{locale}}/cars",
+  "b2xSwitch": {
+    "enable": false,
+    "default": "B2C",
+    "force": false
+  },
+  "filterWhitelist": {
+    "model": true,
+    "modelDesignation": false,
+    "bodyType": true,
+    "buildType": false,
+    "locations": true,
+    "brand": true,
+    "priceValue": true,
+    "monthlyRate": true,
+    "gearBox": true,
+    "combinedPower": true,
+    "enginePowerKW": true,
+    "enginePowerHP": false,
+    "estimatedArrivalDate": false,
+    "modelYear": true,
+    "torque": true,
+    "fuel_type": true,
+    "color_group": true,
+    "equipmentGroups": true,
+    "upholstery_polish": true,
+    "upholstery_group": true,
+    "color_polish": true,
+    "packages": true,
+    "productionDate": false,
+    "lines": true,
+    "badges": true,
+    "seats": true,
+    "motorization": true,
+    "generation": true,
+    "maxWeight": true,
+    "maximumWeight": true,
+    "loadspaceLength": true,
+    "loadspaceHeight": true,
+    "loadspaceWidth": true,
+    "loadspaceVolume": true,
+    "dimensionsLength": true,
+    "dimensionsHeight": true,
+    "dimensionsWidth": true,
+    "dimensionsVolume": true,
+    "loadingSpaceLength": true,
+    "loadingSpaceHeight": true,
+    "loadingSpaceWidth": true,
+    "loadingSpaceVolume": true,
+    "maxLoad": true,
+    "payload": true,
+    "driveType": true,
+    "wheelbase": true,
+    "height": true,
+    "stockCategories": false,
+    "mileage": false,
+    "firstRegistrationDate": false,
+    "estimatedAvailability": false,
+    "registrationType": false,
+    "stockType": true,
+    "modelIdentifier": true,
+    "numberOfSeats": true
+  },
+  "sortWhitelist": {
+    "recommended": false,
+    "name-asc": true,
+    "name-desc": true,
+    "price-asc": true,
+    "price-asc-b2c": true,
+    "price-asc-b2b": true,
+    "price-desc": true,
+    "price-desc-b2c": true,
+    "price-desc-b2b": true,
+    "monthly-asc": false,
+    "monthly-asc-b2c": false,
+    "monthly-asc-b2b": false,
+    "monthly-desc": false,
+    "monthly-desc-b2c": false,
+    "monthly-desc-b2b": false,
+    "mileage-asc": false,
+    "mileage-desc": false,
+    "registrationYear-asc": false,
+    "registrationYear-desc": false,
+    "payload-asc": true,
+    "payload-desc": true,
+    "length-asc": true,
+    "length-desc": true,
+    "width-asc": false,
+    "width-desc": false,
+    "height-asc": false,
+    "height-desc": false,
+    "volume-asc": false,
+    "volume-desc": false,
+    "rate-asc": true,
+    "rate-desc": true
+  },
+  "hideZeroCountMultiSelectFilter": false,
+  "footerTileIds": [
+    {
+      "id": "EmhFooterTile1"
+    },
+    {
+      "id": "EmhFooterTile2"
+    },
+    {
+      "id": "EmhFooterTile3"
+    },
+    {
+      "id": "EmhFooterTile4"
+    }
+  ],
+  "campaignBadgesClickable": true,
+  "showEstimatedArrivalDate": false,
+  "showStrikePrice": true,
+  "regionPicker": {
+    "forceOpen": false
+  },
+  "sitemapGenerator": {
+    "srp": {
+      "enabled": false
+    },
+    "pdp": {
+      "enabled": false
+    }
+  },
+  "vehicleCharacteristics": {
+    "visibleTechnicalInformation": [
+      {
+        "dateType": "YEAR",
+        "key": "POWER"
+      },
+      {
+        "key": "FUELTYPE"
+      },
+      {
+        "key": "GEARBOX"
+      }
+    ]
+  },
+  "oneSearchGraphQL": {
+    "facetFragmentMapper": {
+      "bodyType": "FormattedValueFacet",
+      "brand": "FormattedValueFacet",
+      "buildType": "SimpleCountFacet",
+      "campaigns": "FormattedValueFacet",
+      "color": "FormattedValueFacet",
+      "colorName": "FormattedValueFacet",
+      "colorPolish": "FormattedValueFacet",
+      "dealerFittedOptions": "FormattedValueFacet",
+      "dealerId": "SimpleCountFacet",
+      "driveType": "FormattedValueFacet",
+      "enginePowerHP": "RangeFacet",
+      "enginePowerKW": "RangeFacet",
+      "equipment": "FormattedValueFacet",
+      "estimatedArrivalDate": "DateRangeFacet",
+      "facelift": "NumberCountFacet",
+      "firstRegistrationDate": "DateRangeFacet",
+      "fuelType": "FormattedValueFacet",
+      "gearbox": "FormattedValueFacet",
+      "generation": "SimpleCountFacet",
+      "lengthType": "FormattedValueFacet",
+      "lines": "FormattedValueFacet",
+      "loadspaceHeight": "RangeFacet",
+      "loadspaceLength": "RangeFacet",
+      "loadspaceVolume": "RangeFacet",
+      "loadspaceWidth": "RangeFacet",
+      "maximumWeight": "RangeFacet",
+      "mileage": "RangeFacet",
+      "modelDesignation": "FormattedValueFacet",
+      "modelIdentifier": "FormattedValueFacet",
+      "modelYear": "RangeFacet",
+      "monthlyRate": "RangeFacet",
+      "motorization": "SimpleCountFacet",
+      "packages": "FormattedValueFacet",
+      "payload": "RangeFacet",
+      "price": "RangeFacet",
+      "productionDate": "DateRangeFacet",
+      "registrationType": "FormattedValueFacet",
+      "seats": "NumberCountFacet",
+      "stockCategories": "FormattedValueFacet",
+      "stockType": "SimpleCountFacet",
+      "torque": "RangeFacet",
+      "typeClass": "SimpleCountFacet",
+      "upholstery": "FormattedValueFacet",
+      "upholsteryName": "FormattedValueFacet",
+      "upholsteryPolish": "FormattedValueFacet",
+      "vehicleHeight": "RangeFacet",
+      "wheelbase": "RangeFacet",
+      "wheels": "FormattedValueFacet"
+    },
+    "facetArgumentMapper": {
+      "bodyType": "[BodyType!]",
+      "brand": "[String!]",
+      "buildType": "[String!]",
+      "campaigns": "[String!]",
+      "color": "[String!]",
+      "colorName": "[String!]",
+      "colorPolish": "[String!]",
+      "contextType": "ContextType",
+      "dealerFittedOptions": "[String!]",
+      "dealerId": "[String!]",
+      "driveType": "[TypeOfPropulsion!]",
+      "enginePowerHP": "IntRange",
+      "enginePowerKW": "IntRange",
+      "equipment": "[String!]",
+      "estimatedArrivalDate": "DateRange",
+      "facelift": "Int",
+      "firstRegistrationDate": "DateRange",
+      "fuelType": "[FuelTypeHarmonized!]",
+      "gearbox": "[TransmissionCategory!]",
+      "generation": "[Generation!]",
+      "lengthType": "[String!]",
+      "lines": "[String!]",
+      "loadspaceHeight": "IntRange",
+      "loadspaceLength": "IntRange",
+      "loadspaceVolume": "IntRange",
+      "loadspaceWidth": "IntRange",
+      "maximumWeight": "IntRange",
+      "mileage": "IntRange",
+      "modelDesignation": "[String!]",
+      "modelIdentifier": "[VehicleClass!]",
+      "modelYear": "IntRange",
+      "monthlyRate": "ValueRange",
+      "motorization": "[String!]",
+      "packages": "[String!]",
+      "payload": "IntRange",
+      "price": "ValueRange",
+      "productCode": "String",
+      "productionDate": "DateRange",
+      "registrationType": "[String!]",
+      "seats": "[Int!]",
+      "stockCategories": "[String!]",
+      "stockType": "[StockItemState!]",
+      "torque": "IntRange",
+      "typeClass": "[String!]",
+      "ucNumber": "String",
+      "upholstery": "[String!]",
+      "upholsteryName": "[String!]",
+      "upholsteryPolish": "[String!]",
+      "vehicleHeight": "IntRange",
+      "wheelbase": "IntRange",
+      "wheels": "[String!]"
+    },
+    "endpoint": "https://eu.api.oneweb.mercedes-benz.com/commerce/onesearch/graphql",
+    "enable": true,
+    "apiKey": "d1dcd3a9-25fd-4896-b041-4d35cfdbb482"
+  },
+  "showStickyBar": false,
+  "enablePublicId": false,
+  "checkoutShared": {},
+  "enableOnBehalfMode": false,
+  "enableTradeInService": false,
+  "enableDraftConfigService": true,
+  "tooltips": {
+    "profileSwitchToolTip": {
+      "enabled": true,
+      "cookieLifetimeInDays": 30
+    }
+  },
+  "apiMode": "prod",
+  "apiUrls": false,
+  "cavsApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/cavs/api/v1"
+  },
+  "cartApi": {
+    "vccs": {
+      "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/vccs/api/v1"
+    }
+  },
+  "oneSearchApi": "https://eu.api.oneweb.mercedes-benz.com/commerce/onesearch",
+  "oneSearchApiKey": "d1dcd3a9-25fd-4896-b041-4d35cfdbb482",
+  "issApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/iss"
+  },
+  "veniceApi": {
+    "apiKey": "a962fb95-e669-4377-812b-f66337d7def6",
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/venice"
+  },
+  "vpcApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/vpc",
+    "version": "v1"
+  },
+  "vpcuApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/vpcu/api",
+    "version": "v1"
+  },
+  "vocsApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/vocs/api/v1"
+  },
+  "vofsApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/vofs/api/v1"
+  },
+  "paymentApi": {
+    "baseUrl": "https://eu.api.oneweb.mercedes-benz.com/commerce/vccs/api/v1"
+  },
+  "widgets": {
+    "sfs": {
+      "environment": "production",
+      "scriptUrl": "https://assets.oneweb.mercedes-benz.com/plugin/dh-io-sfs-sfs-app/latest/sfs-app.min.js",
+      "version": "1.0"
+    },
+    "sfsInitializeProposal": {
+      "environment": "production"
+    }
+  },
+  "aemApp": {
+    "isPublished": true,
+    "namespace": "emh",
+    "paramsToNamespace": [
+      "badges",
+      "bodyType",
+      "color_group",
+      "color_polish",
+      "combinedPower",
+      "combinedPowerSecondary",
+      "equipmentGroups",
+      "fuel_type",
+      "gearBox",
+      "lines",
+      "locations",
+      "model",
+      "monthlyRate",
+      "packages",
+      "priceValue",
+      "sort",
+      "upholstery_group",
+      "upholstery_polish"
+    ],
+    "sfpUrl": "https://www.mercedes-benz.be/{{lang}}/passengercars/buy/new-car.html",
+    "srpUrl": "https://www.mercedes-benz.be/{{lang}}/passengercars/buy/new-car/search-results.html",
+    "pdpUrl": "https://www.mercedes-benz.be/{{lang}}/passengercars/buy/new-car/product.html"
+  },
+  "chatShipper": {
+    "appId": {
+      "fr-be": "5e6f861c05e939000ff8632b",
+      "nl-be": "5e69e702d36eb7000f0a98cb"
+    },
+    "appUrl": "https://cdn.chatshipper.com/widget/bundle.min.js"
+  }
+}

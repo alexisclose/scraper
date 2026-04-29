@@ -1,0 +1,86 @@
+URL: https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/css/extensions/components.css
+
+RES: .wbx-breadcrumb{--breadcrumbs-basic-text-color: var(--wb-breadcrumbs-basic-text-color);--breadcrumbs-basic-icon-color: var(--wb-breadcrumbs-basic-icon-color);--breadcrumbs-basic-icon-size: var(--wb-breadcrumbs-basic-icon-size);display:inline-flex;flex-direction:row;white-space:nowrap;--link-text-color: var(--wb-link-standalone-text-color-default);--link-icon-leading-color: var(--wb-link-standalone-icon-leading-color-default);--link-icon-trailing-color: var(--wb-link-standalone-icon-trailing-color-default);--link-icon-leading-size: var(--wb-link-standalone-icon-leading-size);--link-icon-trailing-size: var(--wb-link-standalone-icon-trailing-size);--link-border-underline-color: var(--wb-link-standalone-border-underline-color-default);--link-border-weight-default: var(--wb-link-standalone-border-underline-weight-default);--link-border-weight-hover: var(--wb-link-standalone-border-underline-weight-hover);display:inline;color:var(--link-text-color);outline-color:var(--link-border-ring-color);background-color:var(--wb-transparent);background-image:linear-gradient(to top, var(--link-border-underline-color) var(--link-border-weight-hover), var(--wb-transparent) var(--link-border-weight-hover)),linear-gradient(to top, var(--link-border-underline-color) var(--link-border-weight-default), var(--wb-transparent) var(--link-border-weight-default));background-repeat:no-repeat,no-repeat;background-position-x:left;background-size:0% 100%,100% 100%;padding-block-end:.125rem;cursor:pointer;text-
+========================
+URL: https://assets.oneweb.mercedes-benz.com/plugin/emh-dcps-mrktplc-vehicles-configuration/latest/ncos/prod/config_be.json
+
+RES: {"allowLogin":true,"availabilityNotification":{"enabled":true,"apiUrl":"https://eu.api.oneweb.mercedes-benz.com/commerce/subscription-service"},"checkout":{"enablePriceBreakdown":true,"isNewFocComponentEnabled":false,"vccsInternalBackend":false,"isNewCheckoutTemplateEnabled":false,"isNewOrderCreationFlowEnabled":true,"enablePaymentMethodStep":true,"enablePaymentAsPenultimateStep":false,"authentication":{"enableGuestCheckout":true,"loginType":"tunnel","registerButton":{"redirectTo":"CIAM"},"loginRework":false},"deliveryMethods":{"dealerSelectionStrategies":[],"homeDeliveryAddressOption":"USER_ADDRESS","enableSelectionOfNearestDealer":false,"showDeliveryCostWithPlusCharacter":true,"hideDeliveryCostIfZero":true,"enabledDeliveryModes":["pickup"],"showSalesConsultant":false,"showFreeTextField":false,"setHomeDeliveryPartner":false,"freeTextPattern":"^[a-zA-Z0-9 ]{1,128}$","showDealerInformationLocalized":false},"fincalc":{"callerSummary":"marketplace","callerCalculator":"marketplace"},"mpay3ds2LibraryUrl":"https://api.mercedes-pay.io/integrations/3ds2/library.js","paymentOptions":{"enabledPaymentOptions":["DIRECT_PAYMENT"],"defaultPaymentOption":"DIRECT_PAYMENT","fincalcSummaryIds":{"depositAmount":["deposit_amount","downPayment"],"installment":["installment","monthlyInstallment","pmtGrossIncService"],"periodMonths":["period_months","funding.duration","inputDuration"]},"enableFinancingForForeignPaymentAddress":false,"showTransferCostsForFinance":false,"paymentOptionInfoBoxEnable":t
+========================
+URL: https://assets.oneweb.mercedes-benz.com/plugin/emh-dcps-mrktplc-vehicles-configuration/latest/ncos/prod/config_be.json
+
+RES: {"allowLogin":true,"availabilityNotification":{"enabled":true,"apiUrl":"https://eu.api.oneweb.mercedes-benz.com/commerce/subscription-service"},"checkout":{"enablePriceBreakdown":true,"isNewFocComponentEnabled":false,"vccsInternalBackend":false,"isNewCheckoutTemplateEnabled":false,"isNewOrderCreationFlowEnabled":true,"enablePaymentMethodStep":true,"enablePaymentAsPenultimateStep":false,"authentication":{"enableGuestCheckout":true,"loginType":"tunnel","registerButton":{"redirectTo":"CIAM"},"loginRework":false},"deliveryMethods":{"dealerSelectionStrategies":[],"homeDeliveryAddressOption":"USER_ADDRESS","enableSelectionOfNearestDealer":false,"showDeliveryCostWithPlusCharacter":true,"hideDeliveryCostIfZero":true,"enabledDeliveryModes":["pickup"],"showSalesConsultant":false,"showFreeTextField":false,"setHomeDeliveryPartner":false,"freeTextPattern":"^[a-zA-Z0-9 ]{1,128}$","showDealerInformationLocalized":false},"fincalc":{"callerSummary":"marketplace","callerCalculator":"marketplace"},"mpay3ds2LibraryUrl":"https://api.mercedes-pay.io/integrations/3ds2/library.js","paymentOptions":{"enabledPaymentOptions":["DIRECT_PAYMENT"],"defaultPaymentOption":"DIRECT_PAYMENT","fincalcSummaryIds":{"depositAmount":["deposit_amount","downPayment"],"installment":["installment","monthlyInstallment","pmtGrossIncService"],"periodMonths":["period_months","funding.duration","inputDuration"]},"enableFinancingForForeignPaymentAddress":false,"showTransferCostsForFinance":false,"paymentOptionInfoBoxEnable":t
+========================
+URL: https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/css/globals-no-tokens.css
+
+RES: @font-face{font-family:MBCorpo Title;font-weight:400;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoATitleCond-Regular-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo S Title;font-weight:400;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSTitle-Regular-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo S Title;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSTitle-Bold-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo Text;font-weight:400;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSText-Regular-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo Text;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSText-Bold-Web.woff2)format("woff2")}@font-face{font-family:MB Corpo A Screen1 Cond WEB;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoAScreen1Cond-Regular-Web.woff2)format("woff2")}@font-face{font-family:MB Corpo A Screen2 Cond WEB;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/work
+========================
+URL: https://api.usercentrics.eu/settings/jKFq1zGms/latest/nl.json
+
+RES: {"settingsId":"jKFq1zGms","version":"117.171.517","isLatest":true,"buttonDisplayLocation":"bl","moreInfoButtonUrl":"","actionClickOnViewConsentInSearchApp":"","layout":1,"privacyModal":1,"urlConsentInfo":"","stylesCss":"","buttonPrivacyOpenIcon":"","buttonPrivacyCloseIcon":"","buttonPrivacyOpenIconUrl":"https://img.usercentrics.eu/misc/icon-fingerprint.svg","bannerMobileDescription":"","consentSharingIFrameUrl":"","bannerMobileDescriptionIsActive":false,"controllerIdCookie":"","chipDisplayLocation":"rm","privacyButtonIsVisible":true,"chipIsVisible":false,"disableScriptIfBot":false,"consentSharingIFrameIsCustomUrl":false,"consentSharingIFrameIsActive":false,"iabConsentIsActive":false,"resetConsentsOnShowingInitialView":false,"btnMoreInfoIsVisible":true,"isVisibleInIframe":true,"btnDenyIsVisible":true,"showLanguageDropdown":true,"enablePoweredBy":true,"storeUserCounter":false,"useConsentCookie":true,"tagLoggerIsActive":true,"storeConsents":true,"optInCountdownVisible":false,"optInCountdown":0,"optInIfUserContinuesNavigation":false,"displayInitialViewToUser":false,"deactivateShowOnLegalUpdate":false,"showInitialViewForVersionChange":["major"],"editableLanguages":["en","fr","nl"],"languagesAvailable":["fr","nl"],"whiteListedDomains":["https://www.mercedes-benz.be/"],"whiteListTargetDomains":[],"whiteListReferrerDomains":[],"testDomains":[],"showErrorOnUnallowedDomain":false,"trackingProviderUsedToGetTrackingEvents":[],"dataScopes":["dataLayer"],"language":"nl","countdownForShowin
+========================
+URL: https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/css/globals-no-tokens.css
+
+RES: @font-face{font-family:MBCorpo Title;font-weight:400;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoATitleCond-Regular-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo S Title;font-weight:400;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSTitle-Regular-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo S Title;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSTitle-Bold-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo Text;font-weight:400;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSText-Regular-Web.woff2)format("woff2")}@font-face{font-family:MBCorpo Text;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoSText-Bold-Web.woff2)format("woff2")}@font-face{font-family:MB Corpo A Screen1 Cond WEB;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/workbench/fonts/2.4.0/WOFF2/MBCorpoAScreen1Cond-Regular-Web.woff2)format("woff2")}@font-face{font-family:MB Corpo A Screen2 Cond WEB;font-weight:700;font-style:normal;font-display:swap;src:url(https://assets.oneweb.mercedes-benz.com/plugin/work
+========================
+URL: https://assets.oneweb.mercedes-benz.com/plugin/workbench/core/7.80.2/css/extensions/components.css
+
+RES: .wbx-breadcrumb{--breadcrumbs-basic-text-color: var(--wb-breadcrumbs-basic-text-color);--breadcrumbs-basic-icon-color: var(--wb-breadcrumbs-basic-icon-color);--breadcrumbs-basic-icon-size: var(--wb-breadcrumbs-basic-icon-size);display:inline-flex;flex-direction:row;white-space:nowrap;--link-text-color: var(--wb-link-standalone-text-color-default);--link-icon-leading-color: var(--wb-link-standalone-icon-leading-color-default);--link-icon-trailing-color: var(--wb-link-standalone-icon-trailing-color-default);--link-icon-leading-size: var(--wb-link-standalone-icon-leading-size);--link-icon-trailing-size: var(--wb-link-standalone-icon-trailing-size);--link-border-underline-color: var(--wb-link-standalone-border-underline-color-default);--link-border-weight-default: var(--wb-link-standalone-border-underline-weight-default);--link-border-weight-hover: var(--wb-link-standalone-border-underline-weight-hover);display:inline;color:var(--link-text-color);outline-color:var(--link-border-ring-color);background-color:var(--wb-transparent);background-image:linear-gradient(to top, var(--link-border-underline-color) var(--link-border-weight-hover), var(--wb-transparent) var(--link-border-weight-hover)),linear-gradient(to top, var(--link-border-underline-color) var(--link-border-weight-default), var(--wb-transparent) var(--link-border-weight-default));background-repeat:no-repeat,no-repeat;background-position-x:left;background-size:0% 100%,100% 100%;padding-block-end:.125rem;cursor:pointer;text-
+========================
+URL: https://i18n.oneweb.mercedes-benz.com/euw1-37b4f3a7892061f363b3ivp/content/nl-BE/DO-NOT-DELETE-06-11-2025.json?timestamp=1772012358
+
+RES: {
+  "bff": {
+    "power": {
+      "combustion": "{combustionPower_value} {combustionPower_unit} ({combustionPowerSecondary_value} {combustionPowerSecondary_unit})",
+      "electric": "{electricPower_value} {electricPower_unit} ({electricPowerSecondary_value} {electricPowerSecondary_unit})",
+      "hybrid": "{combustionPower_value} {combustionPower_unit} + {electricPower_value} {electricPower_unit} ({combustionPowerSecondary_value} {combustionPowerSecondary_unit} + {electricPowerSecondary_value} {electricPowerSecondary_unit})"
+    }
+  },
+  "characteristics": {
+    "UPHOLSTERIES": "Bekleding"
+  },
+  "compare": {
+    "bar": {
+      "currentVehiclesAdded": "{ numberOfSelectedVehicles } van het { numberOfMaxVehicles } toegevoegde voertuigen"
+    },
+    "compareResultFilter": {
+      "all": "Alles weergeven"
+    }
+  },
+  "contextBanner": {
+    "description": {
+      "b2b": {
+        "commercial_vans": {
+          "mercedes_benz": {
+            "citan": "Als bestelwagen biedt de Citan compacte buitenafmetingen en veel laadruimte. Tot twee schuifdeuren en een 90°-achterdeur maken het laden en lossen eenvoudig. De Citan is leverbaar in de uitrustingslijnen BASE en PRO, waarbij de PRO tal van extra’s biedt zoals gelakte portiergrepen, led-verlichting en airconditioning. Zowel de Citan Bestelwagen als de Citan Tourer is een betrouwbare partner voor uw dagelijkse werkzaamheden en biedt veel ruimte en comfort.\n",
+            "default": "Functionaliteit ontmoet kwaliteit – voor elk bedrij
+========================
+URL: https://i18n.oneweb.mercedes-benz.com/euw1-37b4f3a7892061f363b3ivp/content/nl-BE/DO-NOT-DELETE-06-11-2025.json?timestamp=1772012358
+
+RES: {
+  "bff": {
+    "power": {
+      "combustion": "{combustionPower_value} {combustionPower_unit} ({combustionPowerSecondary_value} {combustionPowerSecondary_unit})",
+      "electric": "{electricPower_value} {electricPower_unit} ({electricPowerSecondary_value} {electricPowerSecondary_unit})",
+      "hybrid": "{combustionPower_value} {combustionPower_unit} + {electricPower_value} {electricPower_unit} ({combustionPowerSecondary_value} {combustionPowerSecondary_unit} + {electricPowerSecondary_value} {electricPowerSecondary_unit})"
+    }
+  },
+  "characteristics": {
+    "UPHOLSTERIES": "Bekleding"
+  },
+  "compare": {
+    "bar": {
+      "currentVehiclesAdded": "{ numberOfSelectedVehicles } van het { numberOfMaxVehicles } toegevoegde voertuigen"
+    },
+    "compareResultFilter": {
+      "all": "Alles weergeven"
+    }
+  },
+  "contextBanner": {
+    "description": {
+      "b2b": {
+        "commercial_vans": {
+          "mercedes_benz": {
+            "citan": "Als bestelwagen biedt de Citan compacte buitenafmetingen en veel laadruimte. Tot twee schuifdeuren en een 90°-achterdeur maken het laden en lossen eenvoudig. De Citan is leverbaar in de uitrustingslijnen BASE en PRO, waarbij de PRO tal van extra’s biedt zoals gelakte portiergrepen, led-verlichting en airconditioning. Zowel de Citan Bestelwagen als de Citan Tourer is een betrouwbare partner voor uw dagelijkse werkzaamheden en biedt veel ruimte en comfort.\n",
+            "default": "Functionaliteit ontmoet kwaliteit – voor elk bedrij
+========================
