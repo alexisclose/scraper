@@ -1,1 +1,14 @@
 node_modules/
+
+# Tesla scraper: per-run Chrome user-data dirs (cookies, cache — can be GBs)
+tesla-chrome-profile/
+tesla-patchright-profile/
+tesla-profile/
+tesla-profile2/
+tesla-profile3/
+
+# Tesla scraper: intermediate page dumps
+tesla-m3.html
+tesla-m3.txt
+tesla-m3-rentingdump.txt
+tesla-apis.json
