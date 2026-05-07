@@ -1,0 +1,16 @@
+{
+  "id": "bmw",
+  "displayName": "BMW",
+  "productName": "BMW Financial Services — Financial Renting",
+  "productId": "BMW_FIN_RENTING",
+  "endpoints": {
+    "modelsList": "https://configure.bmw.be/nl-be/configurator/models",
+    "calculation": "/operations/default-calculation"
+  },
+  "defaults": {
+    "durationMonths": 60,
+    "annualMileage": 25000,
+    "firstPaymentPct": 0,
+    "vatRate": 0.21
+  }
+}

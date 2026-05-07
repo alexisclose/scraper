@@ -1,0 +1,16 @@
+{
+  "id": "mercedes",
+  "displayName": "Mercedes-Benz",
+  "productName": "Mercedes-Benz Financial Services — Financial Renting",
+  "productId": "MB_FIN_RENTING",
+  "endpoints": {
+    "vmosSummary": "https://api.oneweb.mercedes-benz.com/vmos-api/v3/summary/be/nl",
+    "fcisCalculation": "https://api.oneweb.mercedes-benz.com/fcis-api/v1/calculation"
+  },
+  "defaults": {
+    "durationMonths": 60,
+    "annualMileage": 25000,
+    "firstPaymentPct": 0.2,
+    "vatRate": 0.21
+  }
+}

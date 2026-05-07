@@ -1,0 +1,14 @@
+{
+  "id": "tesla",
+  "displayName": "Tesla",
+  "productName": "Tesla Financial Services — Financiële Renting",
+  "productId": "TESLA_FIN_RENTING",
+  "endpoints": {
+    "model3Design": "https://www.tesla.com/nl_be/model3/design",
+    "homepage": "https://www.tesla.com/nl_be/"
+  },
+  "defaults": {
+    "durationMonths": 60,
+    "vatRate": 0.21
+  }
+}

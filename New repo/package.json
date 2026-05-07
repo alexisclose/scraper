@@ -1,0 +1,57 @@
+{
+  "name": "be-lease-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scrapes Belgian car-brand finance/lease offers (BMW, Mercedes, Tesla, Volkswagen) into a unified schema and consolidated Excel report.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "scrape": "node src/index.js scrape",
+    "scrape:all": "node src/index.js scrape --brand=all",
+    "scrape:bmw": "node src/index.js scrape --brand=bmw",
+    "scrape:mercedes": "node src/index.js scrape --brand=mercedes",
+    "scrape:tesla": "node src/index.js scrape --brand=tesla",
+    "scrape:vw": "node src/index.js scrape --brand=vw",
+    "build-excel": "node src/index.js build-excel",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "p-limit": "^6.1.0",
+    "p-retry": "^6.2.0",
+    "patchright": "^1.49.4",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0",
+    "playwright": "^1.50.0",
+    "xlsx": "^0.18.5",
+    "yargs": "^17.7.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jest": "^28.10.0",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
+}

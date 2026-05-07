@@ -1,0 +1,13 @@
+{
+  "id": "vw",
+  "displayName": "Volkswagen",
+  "productName": "Volkswagen Financial Services — Financiële Renting",
+  "productId": "VW_FIN_RENTING",
+  "endpoints": {
+    "professionalsList": "https://www.volkswagen.be/app/offers/nl/professionals?active=556",
+    "modelPattern": "https://www.volkswagen.be/app/offers/nl/professional/{slug}"
+  },
+  "defaults": {
+    "vatRate": 0.21
+  }
+}
