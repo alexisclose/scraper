@@ -1,0 +1,31 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Run output
+data/raw/*
+data/reports/*
+!data/raw/.gitkeep
+!data/reports/.gitkeep
+
+# Browser profiles (cookies, cache — can be GBs)
+.browser-profiles/
+tesla-chrome-profile/
+tesla-patchright-profile/
+
+# Intermediate dumps for debugging
+.tmp/
+*.html.dump
+*.txt.dump
+
+# Logs
+logs/
+*.log
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
