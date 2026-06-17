@@ -3,19 +3,20 @@
 //
 // Naming: each exported function takes a Playwright Page and returns plain
 // JSON — no brand-specific logic leaks back into the orchestrator.
+//
+// IMPORTANT: nothing here hardcodes a model. The trim patterns and localized
+// Dutch labels are passed in by the orchestrator (from candidate-models.json
+// and configs/brands/tesla.json) so the exact same code reads Model 3, Y, S, X
+// and any future model. This is what makes the scraper multi-model.
 
 /* global document, window */
 
-const TRIM_PATTERNS = [
-  { key: 'Long Range AWD', re: /long range (all-?wheel drive|awd|dual motor)/i },
-  { key: 'Long Range RWD', re: /long range (achterwielaandrijving|rear-?wheel)/i },
-  { key: 'Performance', re: /\bperformance\b/i },
-  { key: 'Achterwielaandrijving (RWD)', re: /(?<!long range )(achterwielaandrijving|rear-?wheel)/i },
-];
-
 // Phase A: read each trim's gross cash price from the default "Privé: Contant"
 // view, before we switch the payment-type dropdown.
-export async function readCashPrices(page) {
+//
+// `trimPatterns` is `[{ key, re }]` where `re` is a *string* regex source for
+// the model currently loaded (so e.g. Model 3 never sees Model S patterns).
+export async function readCashPrices(page, trimPatterns) {
   // Lazy-rendered sections: scroll once
   await page.evaluate(async () => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -28,7 +29,7 @@ export async function readCashPrices(page) {
   await page.waitForTimeout(1200);
 
   return page.evaluate((patterns) => {
-    const compiled = patterns.map((p) => ({ key: p.key, re: new RegExp(p.reSource, 'i') }));
+    const compiled = patterns.map((p) => ({ key: p.key, re: new RegExp(p.re, 'i') }));
     const best = new Map();
     for (const el of document.querySelectorAll('*')) {
       const t = (el.innerText || '').trim();
@@ -51,14 +52,39 @@ export async function readCashPrices(page) {
       if (all.length) out[name] = Math.max(...all);
     }
     return out;
-  }, TRIM_PATTERNS.map((p) => ({ key: p.key, reSource: p.re.source })));
+  }, trimPatterns);
+}
+
+// Debug helper: dump every "trim-like" card (short text + a €price) found on
+// the page, regardless of whether it matched a known pattern. Read-only — used
+// only for logging so maintainers can spot a renamed/added trim that the
+// per-model pattern list doesn't yet cover. Never feeds the schema.
+export async function dumpTrimCards(page) {
+  return page.evaluate(() => {
+    const seen = new Set();
+    const cards = [];
+    for (const el of document.querySelectorAll(
+      "[role='radio'], [role='option'], button, label, li",
+    )) {
+      const t = (el.innerText || '').replace(/\s+/g, ' ').trim();
+      if (!t || t.length > 160) continue;
+      if (!/€\s*[\d.]{3,}/.test(t)) continue;
+      if (seen.has(t)) continue;
+      seen.add(t);
+      cards.push(t);
+    }
+    return cards.slice(0, 40);
+  });
 }
 
 // Phase B: programmatically expand Tesla's TDS listbox dropdown and pick the
-// "Zakelijk → Financiële Renting (Lage Afkoopwaarde)" option.
-export async function selectBusinessFinancialRenting(page) {
-  const result = await page.evaluate(async () => {
+// "Zakelijk → Financiële Renting (Lage Afkoopwaarde)" option. The option text
+// to match is supplied as a string regex source from config (`labels`) so the
+// Dutch label lives in one place.
+export async function selectBusinessFinancialRenting(page, optionReSource) {
+  const result = await page.evaluate(async (reSource) => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const optionRe = new RegExp(reSource, 'i');
     const chip = document.querySelector('.tds-chip-text');
     if (!chip) return { ok: false, reason: 'chip-text-missing' };
     const startLabel = chip.innerText.trim();
@@ -70,58 +96,47 @@ export async function selectBusinessFinancialRenting(page) {
     trigger.click();
     await sleep(700);
     const target = [...document.querySelectorAll("[data-tds-label], [role='option']")].find((o) =>
-      /Zakelijk.*Financi[eë]le Renting.*Lage Afkoopwaarde/i.test(
-        o.getAttribute('data-tds-label') || o.innerText || '',
-      ),
+      optionRe.test(o.getAttribute('data-tds-label') || o.innerText || ''),
     );
     if (!target) return { ok: false, reason: 'option-not-found', startLabel };
     target.click();
     await sleep(2500);
     const newChip = document.querySelector('.tds-chip-text');
     return { ok: true, startLabel, endLabel: newChip ? newChip.innerText.trim() : null };
-  });
+  }, optionReSource);
   await page.waitForTimeout(2500);
   return result;
 }
 
 // Phase C, sub-step 1: read the "<trim> € XYZ /mnd" listing that's now visible
-// on the trim selector under Renting. All four monthlies in one call.
-export async function readMonthliesByTrim(page) {
-  return page.evaluate(() => {
-    const text = document.body.innerText;
-    const map = {};
-    const patterns = [
-      [/long range all-?wheel drive[^€]{0,40}€\s*([\d.,]+)\s*\/\s*mnd/i, 'Long Range AWD'],
-      [
-        /long range achterwielaandrijving[^€]{0,40}€\s*([\d.,]+)\s*\/\s*mnd/i,
-        'Long Range RWD',
-      ],
-      [/performance[^€]{0,40}€\s*([\d.,]+)\s*\/\s*mnd/i, 'Performance'],
-      [
-        /(?<!long range )achterwielaandrijving[^€]{0,40}€\s*([\d.,]+)\s*\/\s*mnd/i,
-        'Achterwielaandrijving (RWD)',
-      ],
-    ];
-    for (const [re, key] of patterns) {
-      const m = text.match(re);
-      if (m) map[key] = m[1];
-    }
-    return map;
-  });
+// on the trim selector under Renting. All trims for the current model in one
+// call. Derives the per-trim monthly regex from the same `re` used for cash.
+export async function readMonthliesByTrim(page, trimPatterns, monthlySuffix) {
+  return page.evaluate(
+    ({ patterns, suffix }) => {
+      const text = document.body.innerText;
+      const map = {};
+      for (const { key, re } of patterns) {
+        // The trim `re` may itself contain capturing groups (e.g. "long range
+        // (awd|dual motor)"), so the price uses a *named* group to stay
+        // index-independent.
+        const monthlyRe = new RegExp(`${re}[^€]{0,40}€\\s*(?<price>[\\d.,]+)\\s*${suffix}`, 'i');
+        const m = text.match(monthlyRe);
+        if (m && m.groups && m.groups.price) map[key] = m.groups.price;
+      }
+      return map;
+    },
+    { patterns: trimPatterns, suffix: monthlySuffix },
+  );
 }
 
 // Phase C, sub-step 2: click a trim card; once active, read its specific
-// downpayment / term / km / residual from the legal-mention panel.
-export async function selectTrimAndReadPanel(page, trimKey) {
-  await page.evaluate((tn) => {
-    const norm = tn.replace(/\s*\(.*?\)\s*/g, '').trim();
-    const reByKey = {
-      'Long Range AWD': /long range (all-?wheel drive|awd|dual motor)/i,
-      'Long Range RWD': /long range (achterwielaandrijving|rear-?wheel)/i,
-      Performance: /\bperformance\b/i,
-      Achterwielaandrijving: /(?<!long range )(achterwielaandrijving|rear-?wheel)/i,
-    };
-    const re = reByKey[norm] || reByKey.Achterwielaandrijving;
+// downpayment / term / km / residual from the legal-mention panel. The trim's
+// own regex (`trimRe`) and the panel field regexes (`labels`) are passed in so
+// the function stays model-agnostic.
+export async function selectTrimAndReadPanel(page, trimRe, labels) {
+  await page.evaluate((reSource) => {
+    const re = new RegExp(reSource, 'i');
     const els = [
       ...document.querySelectorAll("[role='radio'], [role='option'], button, label, li"),
     ]
@@ -136,22 +151,21 @@ export async function selectTrimAndReadPanel(page, trimKey) {
     els[0].el.scrollIntoView({ block: 'center' });
     els[0].el.click();
     return true;
-  }, trimKey);
+  }, trimRe);
   await page.waitForTimeout(2200);
 
-  return page.evaluate(() => {
+  return page.evaluate((lbl) => {
     const t = document.body.innerText;
-    const dp = t.match(/€\s*([\d.,]+)\s*aanbetaling/i);
-    const term = t.match(/(\d{2,3})\s*maanden/i);
-    const km = t.match(/([\d.,]+)\s*kilometer/i);
-    const rv = t.match(/geschatte restwaarde[^€]{0,20}€\s*(\d[\d.]*\d|\d)/i);
-    return {
-      dp: dp ? dp[1] : null,
-      term: term ? term[1] : null,
-      km: km ? km[1] : null,
-      rv: rv ? rv[1] : null,
+    const grab = (src) => {
+      if (!src) return null;
+      const m = t.match(new RegExp(src, 'i'));
+      return m ? m[1] : null;
     };
-  });
+    return {
+      dp: grab(lbl.downPayment),
+      term: grab(lbl.term),
+      km: grab(lbl.mileage),
+      rv: grab(lbl.residual),
+    };
+  }, labels);
 }
-
-export const TESLA_TRIM_KEYS = TRIM_PATTERNS.map((p) => p.key);

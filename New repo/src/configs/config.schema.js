@@ -42,6 +42,7 @@ export const brandConfigSchema = z.object({
   productName: z.string(),
   productId: z.string(),
   endpoints: z.record(z.string()),
+  labels: z.record(z.string()).optional(),
   defaults: z
     .object({
       durationMonths: z.number().optional(),

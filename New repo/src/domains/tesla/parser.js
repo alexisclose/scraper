@@ -7,8 +7,15 @@ import { deriveFinancials } from '../../libraries/finance/irr.js';
 // Tesla's renting view shows the cash price INCL BTW (gross) but the monthly,
 // downpayment and residual all NET (excl BTW) — there's an explicit
 // "Alle bedragen zijn exclusief BTW" disclaimer on screen.
+// `model` identifies which Tesla we're scraping ({ displayName, range, slug,
+// url }). It defaults to Model 3 so older callers/tests keep working, but the
+// orchestrator always passes the real model so Model Y/S/X rows are tagged
+// correctly and never mixed with Model 3.
+const DEFAULT_MODEL = { displayName: 'Model 3', range: 'Model 3', slug: 'model3' };
+
 export function buildOffer({
   brandConfig,
+  model = DEFAULT_MODEL,
   trimKey,
   cashGross,
   monthlyNetRaw,
@@ -38,10 +45,10 @@ export function buildOffer({
 
   return {
     brand: 'tesla',
-    url: url ?? brandConfig.endpoints.model3Design,
-    slug: 'model3',
-    modelName: `Tesla Model 3 ${trimKey}`,
-    modelRange: 'Model 3',
+    url: url ?? model.url ?? brandConfig.endpoints.model3Design,
+    slug: model.slug,
+    modelName: `Tesla ${model.displayName} ${trimKey}`,
+    modelRange: model.range,
     modelCode: trimKey,
     bonusMalus: null,
     scrapedAt,
