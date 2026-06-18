@@ -2,7 +2,7 @@
   "name": "be-lease-scraper",
   "version": "1.0.0",
   "private": true,
-  "description": "Scrapes Belgian car-brand finance/lease offers (BMW, Mercedes, Tesla, Volkswagen) into a unified schema and consolidated Excel report.",
+  "description": "Scrapes Belgian car-brand finance/lease offers (BMW, Mercedes, Tesla, Volkswagen, Audi) into a unified schema and consolidated Excel report.",
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
@@ -14,6 +14,8 @@
     "scrape:mercedes": "node src/index.js scrape --brand=mercedes",
     "scrape:tesla": "node src/index.js scrape --brand=tesla",
     "scrape:vw": "node src/index.js scrape --brand=vw",
+    "scrape:audi": "node src/index.js scrape --brand=audi",
+    "scrape:stickers": "node src/index.js scrape-stickers",
     "build-excel": "node src/index.js build-excel",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -24,12 +26,14 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "ffmpeg-static": "^5.3.0",
     "p-limit": "^6.1.0",
     "p-retry": "^6.2.0",
     "patchright": "^1.49.4",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
     "playwright": "^1.50.0",
+    "tesseract.js": "^5.1.1",
     "xlsx": "^0.18.5",
     "yargs": "^17.7.2",
     "zod": "^3.23.8"

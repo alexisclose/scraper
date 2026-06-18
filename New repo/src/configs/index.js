@@ -32,6 +32,10 @@ function buildConfig() {
     vw: {
       noCache: bool(env.VW_NO_CACHE) ?? false,
     },
+    audi: {
+      noCache: bool(env.AUDI_NO_CACHE) ?? false,
+      headful: bool(env.AUDI_HEADFUL) ?? false,
+    },
     paths: {
       dataDir,
       rawDir: join(dataDir, 'raw'),
@@ -50,7 +54,7 @@ function buildConfig() {
 
 export const config = buildConfig();
 
-const brandFiles = ['bmw', 'mercedes', 'tesla', 'vw'];
+const brandFiles = ['bmw', 'mercedes', 'tesla', 'vw', 'audi'];
 export const brandConfigs = Object.fromEntries(
   brandFiles.map((id) => {
     const json = JSON.parse(readFileSync(join(__dirname, 'brands', `${id}.json`), 'utf8'));

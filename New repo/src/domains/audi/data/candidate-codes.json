@@ -1,0 +1,23 @@
+{
+  "_comment": "Audi (Belgium) finance inputs. Two ways to reach the D'Ieteren CCF finance form (formsccf.audi.be):  (1) `models` — durable configurator entry points. Each `configuratorUrl` carries a `pr=` PR-code string identifying a specific build; the browser fetcher opens it, accepts cookies, clicks 'Bereken uw maandprijs' and follows the redirect to formsccf, which mints a FRESH finance `code`. This survives code expiry.  (2) `codes` — already-minted CCF codes for the direct-HTTP fast path (formulastep?code=...). These EXPIRE (server-side saved quotes), so a dead code is expected to redirect to /ccf/nl/Base/Oops and is skipped with a logged reason. Add more models by copying a configurator URL from www.audi.be after building a car.",
+  "models": [
+    {
+      "id": "a3-sportback",
+      "displayName": "Audi A3 Sportback",
+      "range": "A3",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/a3-sportback/configurator/?pr=8YFANC0_2026%7C2D2D%7CAI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "q3-suv",
+      "displayName": "Audi Q3 SUV",
+      "range": "Q3",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-suv/configurator/?pr=FJBAZG1_2026%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    }
+  ],
+  "codes": [
+    {
+      "code": "AB8YS3VH",
+      "note": "Example A3 finance code from the task. Likely expired — kept as a regression/smoke input for the direct-HTTP path."
+    }
+  ]
+}

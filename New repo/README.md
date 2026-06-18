@@ -1,9 +1,9 @@
 # be-lease-scraper
 
 Scrapes business finance/lease offers (Financiële Renting) from the Belgian
-configurator websites of **BMW**, **Mercedes-Benz**, **Tesla** and
-**Volkswagen** into a unified schema, then writes a single Excel workbook with
-one sheet per brand.
+configurator websites of **BMW**, **Mercedes-Benz**, **Tesla**,
+**Volkswagen** and **Audi** into a unified schema, then writes a single Excel
+workbook with one sheet per brand.
 
 Built as a CLI tool, not a server. Each brand is an independent **adapter**
 under `src/domains/<brand>/` exposing `run(ctx)` → array of validated
@@ -125,6 +125,118 @@ term, mileage, downpayment, residual %, and bonus-malus. A small candidate
 slug list (`domains/vw/data/candidate-slugs.json`) is HEAD-probed at startup
 and cached for 24 h to avoid re-checking 22 URLs per run; pass `VW_NO_CACHE=1`
 to bypass.
+
+### Audi
+
+Audi (D'Ieteren) finance offers live on the CCF form
+`formsccf.audi.be/ccf/nl/finance/formulastep?code=<code>`. The `code` is a
+server-side saved quote that is **minted on demand** from the model
+configurator on `www.audi.be` (model → _Configuratie bekijken_ → _Bereken uw
+maandprijs_), and individual codes expire.
+
+The adapter (`domains/audi/`) takes inputs from
+`domains/audi/data/candidate-codes.json`:
+
+- **`models`** — configurator `pr=` URLs. A real browser (shared launcher,
+  like Tesla) drives the configurator, accepts the cookie wall, clicks _Bereken
+  uw maandprijs_, follows the redirect to `formsccf`, and reads the freshly
+  minted form. Immune to code expiry — add models by copying a configurator URL
+  after building a car.
+- **`codes`** — already-minted codes tried over plain proxy-aware HTTP
+  (`fetchByCode`). Expired codes 302 to `/ccf/nl/Base/Oops` and are skipped with
+  a logged reason.
+
+**What is scrapeable:**
+
+- **Model + total vehicle price** (gross _incl. BTW_ + net _excl. BTW_, both
+  explicitly labelled) come straight from the server-rendered form HTML.
+- **Monthly payment** (net + gross) comes from the `POST /ccf/FinanceApi/Calculate`
+  JSON response (`PriceVatExcluded` / `PriceVatIncluded`), which the browser
+  fetcher captures after selecting _Professionelen → Financiële Renting_. The
+  finance calculator is reCAPTCHA-gated, but a **configurator-originated session
+  (real browser, persistent profile, Belgian IP) passes the score with no human
+  in the loop** — a cold/direct hit to `formsccf` does *not* (it returns
+  `FinanceApi/Oops?error=Recaptcha`). We never defeat the reCAPTCHA; we just
+  arrive through the legitimate flow. The direct-HTTP `codes` path can't run JS,
+  so it yields price-only rows (deduped away when a configurator row exists).
+- **Term / mileage / down-payment / residual** are held in server-side session
+  state (not the `Calculate` request) and are not yet read back — they stay
+  `null`. Next step: read the selected duration/mileage from the post-calc form
+  HTML, or map the `GetComponentList` `BoundIds`.
+
+Every captured `FinanceApi` response is dumped to `data/cache/audi/` for
+calibration. `extractFromFinanceApi` parses the `Calculate` shape precisely with
+a sanity-checked heuristic fallback. Pass `AUDI_HEADFUL=1` to watch the browser,
+`AUDI_NO_CACHE=1` to bypass caching. `audi-capture.mjs` (repo root) captures a
+live form standalone.
+
+## Sticker-price scraper (`scrape-stickers`)
+
+A second, **brand-agnostic** scraper for the _advertised_ "sticker" prices on
+marketing / offer pages — the headline "vanaf € 39.990 / € 475 per maand /
+voordeel tot € 5.000" figures. Unlike the brand adapters above (which resolve a
+full finance calculation into a `LeaseOffer`), this one captures **observations**
+of advertised amounts and, crucially, can read prices that are **baked into
+images and video banners** rather than the DOM.
+
+```bash
+npm run scrape:stickers                       # uses src/domains/stickers/data/targets.json
+node src/index.js scrape-stickers --url https://www.bmw.be/nl/Shop-Online/bmw-offers/2026.html --brand bmw
+node src/index.js scrape-stickers --no-videos # text + images only (no ffmpeg needed)
+```
+
+Output: `data/raw/stickers.json` — a flat array of `StickerPrice` records
+(`libraries/schema/sticker-price.js`), each tagging where the price came from
+(`source: 'html' | 'image' | 'video'`), the asset URL, the OCR text +
+confidence, and the parsed `prices[]` (`amount`, `kind`, `unit`).
+
+### How prices-in-pictures-and-videos are read — the recommended approach
+
+The pipeline (`domains/stickers/`) is three tiers, cheapest first:
+
+1. **DOM text** (`source: 'html'`) — render the SPA with Playwright, autoscroll
+   to trigger lazy-loading, and harvest every visible text node containing a
+   euro sign. High precision, ~free. On the BMW 2026 example page _all_ the real
+   prices live here as text overlays, so this tier alone returns them.
+2. **Images** (`source: 'image'`) — collect every painted image (`currentSrc`,
+   largest `srcset` candidate, CSS `background-image`, `og:image`), download the
+   **original full-resolution** asset through the browser's session, and OCR it
+   with **tesseract.js** (local WASM, langs `nld+fra+eng`). Page-segmentation
+   mode 11 ("sparse text") is set because a price floats on a banner rather than
+   sitting in a paragraph.
+3. **Videos** (`source: 'video'`) — you can't OCR an MP4 directly, so we sample
+   one frame every ~1.5 s with **ffmpeg** and OCR each frame like an image. The
+   price "card" usually sits in the closing seconds. ffmpeg is an external
+   binary (not bundled): if it's missing, video scraping is skipped with a
+   warning and the run continues. Install: `winget install Gyan.FFmpeg` /
+   `brew install ffmpeg` / `apt install ffmpeg`, or set `FFMPEG_PATH`.
+
+The price extractor (`domains/stickers/parser.js`) is a pure, unit-tested
+function that requires a euro indicator next to a number (so model years and
+"0% APR" aren't mistaken for prices), tolerates the OCR quirks that show up on
+stylised type (`€`→`£`, `/maand`→`Imaand`, stray spaces in thousands groups),
+and classifies each amount (`monthly` / `cash` / `discount` / `deposit`) by the
+**nearest** keyword so one banner's "Voordeel tot" can't mislabel its catalogue
+price.
+
+### Accuracy note & upgrade path
+
+Local OCR reads clean, high-contrast banner text well (~90 %+ confidence in
+testing) but **digit accuracy drops on low-contrast prices over busy photos** —
+the inherent hard case. The OCR backend is deliberately isolated behind
+`recognize(buffer) -> { text, confidence }` in `domains/stickers/ocr.js`: for
+production-grade accuracy on hard creatives, swap that one module for a cloud
+OCR (Google Cloud Vision, AWS Textract, or Azure AI Vision) — they materially
+outperform tesseract on marketing type — and nothing else in the pipeline
+changes. The schema even keeps `ocrConfidence` so you can route low-confidence
+records to a manual-review queue or a second OCR pass.
+
+### Adding pages
+
+Edit `src/domains/stickers/data/targets.json` (`{ "brand", "url" }` entries),
+or pass `--url` (repeatable) on the CLI. Tunables: `STICKER_MAX_IMAGES` (40),
+`STICKER_MAX_VIDEOS` (3), `STICKER_MIN_OCR_CONFIDENCE` (30), `OCR_LANGS`,
+`OCR_CACHE_DIR`, `FFMPEG_PATH`.
 
 ## Configuration
 

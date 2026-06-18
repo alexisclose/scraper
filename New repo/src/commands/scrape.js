@@ -9,8 +9,9 @@ import bmw from '../domains/bmw/index.js';
 import mercedes from '../domains/mercedes/index.js';
 import tesla from '../domains/tesla/index.js';
 import vw from '../domains/vw/index.js';
+import audi from '../domains/audi/index.js';
 
-const ADAPTERS = { bmw, mercedes, tesla, vw };
+const ADAPTERS = { bmw, mercedes, tesla, vw, audi };
 
 export const scrapeCommand = {
   command: 'scrape',
@@ -20,7 +21,7 @@ export const scrapeCommand = {
       .option('brand', {
         type: 'string',
         describe: 'Brand to scrape',
-        choices: ['bmw', 'mercedes', 'tesla', 'vw', 'all'],
+        choices: ['bmw', 'mercedes', 'tesla', 'vw', 'audi', 'all'],
         default: 'all',
       })
       .option('out', {

@@ -28,6 +28,13 @@ export const configSchema = z.object({
     noCache: z.boolean().default(false),
   }),
 
+  audi: z.object({
+    noCache: z.boolean().default(false),
+    // When true, drive the configurator with a visible browser (useful for
+    // debugging the cookie/consent + "Bereken uw maandprijs" click locally).
+    headful: z.boolean().default(false),
+  }),
+
   paths: z.object({
     dataDir: z.string().default('./data'),
     rawDir: z.string(),
@@ -37,7 +44,7 @@ export const configSchema = z.object({
 });
 
 export const brandConfigSchema = z.object({
-  id: z.enum(['bmw', 'mercedes', 'tesla', 'vw']),
+  id: z.enum(['bmw', 'mercedes', 'tesla', 'vw', 'audi']),
   displayName: z.string(),
   productName: z.string(),
   productId: z.string(),
