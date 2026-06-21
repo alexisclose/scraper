@@ -169,3 +169,118 @@ export async function selectTrimAndReadPanel(page, trimRe, labels) {
     };
   }, labels);
 }
+
+// Phase C (preferred path): select a trim, open the "Financiële voorwaarden en
+// besparingen bewerken" modal, type our own down payment (20% of the net price)
+// into the `cashDownPayment` field, let Tesla recalculate, then read the new
+// monthly + the representative-example values (which now reflect OUR down
+// payment, not Tesla's per-trim default).
+//
+// Why real keyboard events: `cashDownPayment` is a React-controlled TDS input.
+// A synthetic `input` event does NOT reach React's onChange, so the value
+// updates visually but the monthly never recalculates. Playwright's keyboard
+// fires trusted events that React's synthetic system honours.
+export async function setDownPaymentAndReadPanel(page, trimRe, downPaymentNet, labels) {
+  // 1. Select the trim card (same logic as selectTrimAndReadPanel).
+  const selected = await page.evaluate((reSource) => {
+    const re = new RegExp(reSource, 'i');
+    const els = [
+      ...document.querySelectorAll("[role='radio'], [role='option'], button, label, li"),
+    ]
+      .map((el) => ({ el, t: (el.innerText || '').trim() }))
+      .filter(({ t }) => t && t.length < 400 && re.test(t) && /€\s*[\d.]/.test(t));
+    if (!els.length) return false;
+    els.sort(
+      (a, b) =>
+        (a.el.offsetWidth * a.el.offsetHeight || 1e9) -
+        (b.el.offsetWidth * b.el.offsetHeight || 1e9),
+    );
+    els[0].el.scrollIntoView({ block: 'center' });
+    els[0].el.click();
+    return true;
+  }, trimRe);
+  await page.waitForTimeout(2000);
+
+  // 2. Open the edit-finance modal (JS click works through any cookie/region
+  //    overlay). Confirm the down-payment input is present.
+  const sel = labels.downPaymentInputSelector || "input[name='cashDownPayment']";
+  const opened = await page.evaluate(
+    async ({ triggerRe, inputSel }) => {
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      if (document.querySelector(inputSel)) return true; // already open
+      const re = new RegExp(triggerRe, 'i');
+      const el = [...document.querySelectorAll('button, a, [role=button]')].find((e) =>
+        re.test(e.innerText || ''),
+      );
+      if (!el) return false;
+      el.scrollIntoView({ block: 'center' });
+      el.click();
+      await sleep(2500);
+      return !!document.querySelector(inputSel);
+    },
+    { triggerRe: labels.editFinanceTrigger, inputSel: sel },
+  );
+  if (!opened) return { ok: false, reason: 'modal-not-open', selected };
+
+  // 3. Type our down payment (raw integer; Tesla reformats to "€ 6.114").
+  const input = page.locator(sel).first();
+  try {
+    await input.click({ timeout: 8000 });
+    await page.keyboard.press('Control+A');
+    await page.keyboard.press('Delete');
+    await page.waitForTimeout(250);
+    await page.keyboard.type(String(Math.round(downPaymentNet)), { delay: 60 });
+    await page.waitForTimeout(350);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(700);
+    await page.keyboard.press('Tab');
+  } catch (err) {
+    return { ok: false, reason: `input-failed:${err.message}`, selected };
+  }
+  await page.waitForTimeout(3500);
+
+  // 4. Read the recalculated monthly + representative-example values.
+  const reading = await page.evaluate(
+    ({ lbl, inputSel }) => {
+      const body = document.body.innerText;
+      const grab = (src) => {
+        if (!src) return null;
+        const m = body.match(new RegExp(src, 'i'));
+        return m ? m[1] : null;
+      };
+      // The modal headline monthly reads "€ X /mnd geschat" — prefer the
+      // smallest element carrying both "/mnd" and "geschat" so we don't pick up
+      // the static trim-card monthly behind the modal.
+      const est = [...document.querySelectorAll('*')]
+        .filter((e) => /\/\s*mnd[^a-z]{0,3}geschat/i.test(e.innerText || '') && (e.innerText || '').length < 80)
+        .sort((a, b) => (a.innerText || '').length - (b.innerText || '').length)[0];
+      const estM = est ? (est.innerText || '').match(/€\s*([\d.,]+)\s*\/\s*mnd/i) : null;
+      const field = document.querySelector(inputSel);
+      return {
+        monthly: estM ? estM[1] : grab(lbl.monthlyEstimate),
+        dpFieldValue: field ? field.value : null,
+        dp: grab(lbl.downPayment),
+        term: grab(lbl.term),
+        km: grab(lbl.mileage),
+        rv: grab(lbl.residual),
+      };
+    },
+    { lbl: labels, inputSel: sel },
+  );
+
+  // 5. Close the modal so the next trim starts clean (Escape, then a close
+  //    button as fallback). Best-effort — a stuck-open modal still works
+  //    because we re-set the down payment per trim.
+  await page.keyboard.press('Escape').catch(() => {});
+  await page
+    .evaluate(() => {
+      const c = document.querySelector(
+        "button[aria-label*='luiten'], .tds-modal--close, [data-id='modal-close'], button.tds-modal-close",
+      );
+      if (c) c.click();
+    })
+    .catch(() => {});
+  await page.waitForTimeout(1200);
+
+  return { ok: true, selected, ...reading };
+}

@@ -37,7 +37,7 @@ const CANDIDATE_MODELS = CANDIDATES.models || [];
 
 // Turn a fetched finance-form result into a validated offer, or null + a logged
 // reason. Shared by both the HTTP and browser paths.
-function buildOfferOrSkip({ html, finalUrl, code, model, runId, logger, skipped, financeApi }) {
+function buildOfferOrSkip({ html, finalUrl, code, model, runId, logger, financeApi, boundMeanings }) {
   const label = code || model?.id || '(unknown)';
   try {
     const offer = parseAudiOffer({
@@ -49,12 +49,12 @@ function buildOfferOrSkip({ html, finalUrl, code, model, runId, logger, skipped,
       scrapedAt: runId,
       logger,
       financeApi,
+      boundMeanings,
     });
     return validateOffer(offer);
   } catch (err) {
     const reason = err instanceof AppError ? err.code : err.message;
-    logger.warn({ input: label, finalUrl, reason }, 'Audi input skipped');
-    skipped.push({ input: label, reason });
+    logger.warn({ input: label, finalUrl, reason }, 'Audi parse/validation failed');
     return null;
   }
 }
@@ -67,6 +67,7 @@ async function run({ logger, runId }) {
 
   const offers = [];
   const skipped = [];
+  const lastReason = new Map(); // model id → last failure reason (for the summary)
 
   // ---- Path 1: direct HTTP for already-minted codes (proxy-aware) ----
   if (CANDIDATE_CODES.length) {
@@ -88,7 +89,9 @@ async function run({ logger, runId }) {
               skipped.push({ input: code, reason: 'AUDI_OOPS' });
               return null;
             }
-            return buildOfferOrSkip({ html, finalUrl, code, runId, logger, skipped });
+            const codeOffer = buildOfferOrSkip({ html, finalUrl, code, runId, logger });
+            if (!codeOffer) skipped.push({ input: code, reason: 'AUDI_PARSE_FAILED' });
+            return codeOffer;
           } catch (err) {
             const reason = err instanceof AppError ? err.code : err.message;
             logger.warn({ input: code, reason }, 'Audi code fetch failed — page not reachable');
@@ -103,74 +106,176 @@ async function run({ logger, runId }) {
 
   // ---- Path 2: browser drives the configurator to mint fresh codes ----
   if (CANDIDATE_MODELS.length) {
-    let browserHandle = null;
-    try {
-      browserHandle = await launchBrowser({
-        strategy: config.audi.headful ? 'patchright' : 'spawn-cdp',
-        profileDir: join(config.paths.browserProfilesDir, 'audi'),
-        startUrl: CANDIDATE_MODELS[0]?.configuratorUrl || brandConfig.endpoints.home,
-      });
-    } catch (err) {
-      logger.warn(
-        { reason: err.code || err.message, models: CANDIDATE_MODELS.length },
-        'Audi browser launch failed — skipping configurator path',
-      );
-      CANDIDATE_MODELS.forEach((m) =>
-        skipped.push({ input: m.id, reason: err.code || 'BROWSER_LAUNCH_FAILED' }),
-      );
-    }
+    // Models are scraped by a POOL of browsers running in parallel. The spawn-cdp
+    // Chrome is detached and accumulates memory (it tends to crash after a few
+    // heavy configurator pages), so each worker owns its own browser, recycles it
+    // every few models, and every (re)launch uses a FRESH cdp port + ephemeral
+    // profile — so a dead/zombie instance can never block the next one. Ephemeral
+    // profiles re-show the cookie wall, which the fetcher now dismisses.
+    const CONCURRENCY = Math.max(1, Math.min(config.audi.concurrency, CANDIDATE_MODELS.length));
+    const RESTART_EVERY = 4;
+    const basePort = config.tesla.cdpPort + 10;
 
-    if (browserHandle) {
-      const { context, cleanup } = browserHandle;
-      try {
-        for (const model of CANDIDATE_MODELS) {
-          try {
-            const { finalUrl, code, redirectedToOops, html, financeApi, recaptchaBlocked } =
-              await mintFromConfigurator(context, model, { logger });
-            if (redirectedToOops) {
-              logger.warn(
-                { input: model.id, finalUrl, reason: 'AUDI_OOPS' },
-                'Audi configurator landed on Oops — skipped',
-              );
-              skipped.push({ input: model.id, reason: 'AUDI_OOPS' });
-              continue;
+    // Process one model. Returns the offer (or null) and a `browserDead` flag so
+    // the caller can relaunch + retry when the shared browser/context crashes
+    // mid-run (a real risk across a long, many-model sweep).
+    const scrapeModel = async (context, model) => {
+      const { finalUrl, code, redirectedToOops, html, financeApi, boundMeanings, recaptchaBlocked } =
+        await mintFromConfigurator(context, model, {
+          logger,
+          downPaymentPct: brandConfig.defaults?.firstPaymentPct ?? 0,
+        });
+      if (redirectedToOops) {
+        logger.warn({ input: model.id, finalUrl, reason: 'AUDI_OOPS' }, 'Audi configurator landed on Oops');
+        return null;
+      }
+      if (financeApi?.length) {
+        const dump = join(config.paths.dataDir, 'cache', 'audi', `finance-api-${code || model.id}.json`);
+        // Redact the single-use reCAPTCHA token before persisting.
+        const redacted = financeApi.map((r) =>
+          r.requestBody && typeof r.requestBody === 'object' && 'Token' in r.requestBody
+            ? { ...r, requestBody: { ...r.requestBody, Token: '[redacted]' } }
+            : r,
+        );
+        writeJson(dump, redacted);
+        logger.info({ input: model.id, responses: financeApi.length }, 'Audi FinanceApi JSON captured');
+      } else {
+        logger.warn(
+          { input: model.id, recaptchaBlocked },
+          recaptchaBlocked
+            ? 'Audi FinanceApi blocked by reCAPTCHA — monthly unavailable, vehicle price only'
+            : 'Audi FinanceApi returned no JSON — monthly unavailable, vehicle price only',
+        );
+      }
+      return buildOfferOrSkip({ html, finalUrl, code, model, runId, logger, financeApi, boundMeanings });
+    };
+
+    // A browser "lane": owns one Chrome (fresh port + ephemeral profile per
+    // launch so a dead/zombie instance can never block the next) and recycles it
+    // every few models. Used by both the parallel pool and the serial cleanup.
+    const createLane = (laneId) => {
+      let seq = 0;
+      let handle = null;
+      let sinceRestart = 0;
+      const launch = () =>
+        launchBrowser({
+          strategy: config.audi.headful ? 'patchright' : 'spawn-cdp',
+          port: basePort + laneId * 60 + (seq % 50),
+          profileDir: join(config.paths.browserProfilesDir, `audi-w${laneId}-${seq}`),
+          startUrl: CANDIDATE_MODELS[0]?.configuratorUrl || brandConfig.endpoints.home,
+        });
+      const close = async () => {
+        await handle?.cleanup().catch(() => {});
+        await handle?.context?.browser()?.close().catch(() => {});
+        handle = null;
+      };
+      const relaunch = async () => {
+        await close();
+        seq += 1;
+        handle = await launch().catch(() => null);
+        sinceRestart = 0;
+        return handle;
+      };
+      return {
+        async ready() {
+          if (!handle) handle = await launch().catch(() => null);
+          if (handle && sinceRestart >= RESTART_EVERY) await relaunch();
+          return handle;
+        },
+        get context() {
+          return handle?.context;
+        },
+        noteDone() {
+          sinceRestart += 1;
+        },
+        relaunch,
+        close,
+      };
+    };
+
+    const succeeded = new Set();
+
+    // Run one model on a lane with up to `maxAttempts`, recycling on crash.
+    // Returns true on success. Records the failure reason for the summary.
+    const runModel = async (lane, model, maxAttempts) => {
+      if (!(await lane.ready())) {
+        lastReason.set(model.id, 'BROWSER_LAUNCH_FAILED');
+        return false;
+      }
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          const offer = await scrapeModel(lane.context, model);
+          lane.noteDone();
+          if (offer) {
+            offers.push(offer);
+            succeeded.add(model.id);
+            return true;
+          }
+          lastReason.set(model.id, 'AUDI_OOPS_OR_PARSE'); // null = Oops / parse fail
+        } catch (err) {
+          const reason = err.message || 'AUDI_CONFIGURATOR_FAILED';
+          lastReason.set(model.id, reason);
+          if (/closed|crash|disconnect|Target (?:page|closed)|browser has been/i.test(reason)) {
+            if (!(await lane.relaunch())) {
+              lastReason.set(model.id, 'BROWSER_RELAUNCH_FAILED');
+              return false;
             }
-            // Persist the raw FinanceApi JSON (the calibration artifact) so the
-            // exact monthly/term/residual keys can be pinned after an un-gated
-            // run. If the calc was reCAPTCHA-blocked, say so loudly — that's the
-            // expected reason the monthly is missing.
-            if (financeApi?.length) {
-              const dump = join(config.paths.dataDir, 'cache', 'audi', `finance-api-${code || model.id}.json`);
-              writeJson(dump, financeApi);
-              logger.info({ input: model.id, responses: financeApi.length, dump }, 'Audi FinanceApi JSON captured');
-            } else {
-              logger.warn(
-                { input: model.id, recaptchaBlocked },
-                recaptchaBlocked
-                  ? 'Audi FinanceApi blocked by reCAPTCHA — monthly unavailable, vehicle price only'
-                  : 'Audi FinanceApi returned no JSON — monthly unavailable, vehicle price only',
-              );
-            }
-            const offer = buildOfferOrSkip({
-              html,
-              finalUrl,
-              code,
-              model,
-              runId,
-              logger,
-              skipped,
-              financeApi,
-            });
-            if (offer) offers.push(offer);
-          } catch (err) {
-            const reason = err.message || 'AUDI_CONFIGURATOR_FAILED';
-            logger.warn({ input: model.id, reason }, 'Audi configurator path failed');
-            skipped.push({ input: model.id, reason });
           }
         }
-      } finally {
-        await cleanup().catch(() => {});
+        if (attempt < maxAttempts) {
+          logger.warn(
+            { input: model.id, reason: lastReason.get(model.id), attempt },
+            'Audi model attempt failed — retrying',
+          );
+        }
       }
+      return false;
+    };
+
+    logger.info(
+      { models: CANDIDATE_MODELS.length, concurrency: CONCURRENCY },
+      'Audi scraping models via configurator (parallel)',
+    );
+
+    // ---- Parallel pool: each lane pulls from a shared queue ----
+    let nextIndex = 0;
+    const worker = async (laneId) => {
+      const lane = createLane(laneId);
+      try {
+        for (;;) {
+          const i = nextIndex;
+          nextIndex += 1;
+          if (i >= CANDIDATE_MODELS.length) break;
+          // One retry under contention; the serial cleanup pass does the rest.
+          await runModel(lane, CANDIDATE_MODELS[i], 2);
+        }
+      } finally {
+        await lane.close();
+      }
+    };
+    await Promise.all(Array.from({ length: CONCURRENCY }, (_, w) => worker(w)));
+
+    // ---- Serial cleanup pass: retry stragglers under ZERO contention, where
+    // the configurator renders fastest and the flaky steps almost always pass.
+    const stragglers = CANDIDATE_MODELS.filter((m) => !succeeded.has(m.id));
+    if (stragglers.length) {
+      logger.info(
+        { stragglers: stragglers.map((m) => m.id) },
+        'Audi cleanup pass for models that did not complete in parallel',
+      );
+      const lane = createLane(CONCURRENCY); // its own port band
+      try {
+        for (const model of stragglers) {
+          await runModel(lane, model, 3);
+        }
+      } finally {
+        await lane.close();
+      }
+    }
+
+    // Authoritative failure list (after cleanup) for the summary.
+    for (const m of CANDIDATE_MODELS) {
+      if (!succeeded.has(m.id)) skipped.push({ input: m.id, reason: lastReason.get(m.id) || 'unknown' });
     }
   }
 

@@ -135,16 +135,26 @@ configurator on `www.audi.be` (model → _Configuratie bekijken_ → _Bereken uw
 maandprijs_), and individual codes expire.
 
 The adapter (`domains/audi/`) takes inputs from
-`domains/audi/data/candidate-codes.json`:
+`domains/audi/data/candidate-codes.json` (the **full Belgian line-up**, ~17
+models):
 
 - **`models`** — configurator `pr=` URLs. A real browser (shared launcher,
-  like Tesla) drives the configurator, accepts the cookie wall, clicks _Bereken
-  uw maandprijs_, follows the redirect to `formsccf`, and reads the freshly
-  minted form. Immune to code expiry — add models by copying a configurator URL
-  after building a car.
+  like Tesla) drives the configurator, dismisses the **Ensighten cookie wall**
+  (`#ensAcceptAll` in the `#privacy-shadow` shadow root — its overlay otherwise
+  intercepts every click), clicks _Bereken uw maandprijs_, follows the redirect
+  to `formsccf`, and reads the freshly minted form. Immune to code expiry — add
+  models by loading a model's `/configurator/?#summary`, letting it resolve a
+  `pr`, and copying the URL.
 - **`codes`** — already-minted codes tried over plain proxy-aware HTTP
   (`fetchByCode`). Expired codes 302 to `/ccf/nl/Base/Oops` and are skipped with
   a logged reason.
+
+Models are scraped by a **pool of parallel browsers** (`AUDI_CONCURRENCY`,
+default 3). Each worker owns its own Chrome on a dedicated CDP port + ephemeral
+profile and recycles it every few models — the detached spawn-cdp Chrome leaks
+memory and crashes after a handful of heavy configurator pages, so isolation +
+recycling + a one-shot retry keep a full sweep reliable (~8–9 min for the whole
+range vs ~50 min serial). A transient model failure is retried once.
 
 **What is scrapeable:**
 
@@ -159,16 +169,29 @@ The adapter (`domains/audi/`) takes inputs from
   `FinanceApi/Oops?error=Recaptcha`). We never defeat the reCAPTCHA; we just
   arrive through the legitimate flow. The direct-HTTP `codes` path can't run JS,
   so it yields price-only rows (deduped away when a configurator row exists).
-- **Term / mileage / down-payment / residual** are held in server-side session
-  state (not the `Calculate` request) and are not yet read back — they stay
-  `null`. Next step: read the selected duration/mileage from the post-calc form
-  HTML, or map the `GetComponentList` `BoundIds`.
+- **Product = Financiële Renting.** The form defaults to *Verhuur lange termijn*
+  (Long Term Rental); the fetcher selects the **Financiële Renting** card
+  (family with `financing-type = FinancialRenting`) by real mouse-clicking the
+  visible card and verifying the radio flips.
+- **Down payment = 20%.** Financiële Renting defaults the down payment ("Eerste
+  verhoogde huur") to **25% of the catalogue (excl. BTW)**; the fetcher types
+  **20% of the net price** into that field and lets the form recalculate, so the
+  monthly is always the form's own figure (never computed by us). The % is
+  `defaults.firstPaymentPct` in `audi.json`.
+- **Term / annual mileage / down / residual** come from the `Calculate` *request*
+  body the fetcher captures. Because the down ("Eerste verhoogde huur") and the
+  residual ("Aankoopoptie") both default to 25% and are indistinguishable by
+  value, the fetcher also reads a `componentId → meaning` map off the form so
+  `mapBounds` can label them correctly. `contractMileage`, `interestEffective`
+  and `sumOfAllPayments` are then derived (the residual makes the implied rate
+  solvable).
 
 Every captured `FinanceApi` response is dumped to `data/cache/audi/` for
 calibration. `extractFromFinanceApi` parses the `Calculate` shape precisely with
-a sanity-checked heuristic fallback. Pass `AUDI_HEADFUL=1` to watch the browser,
-`AUDI_NO_CACHE=1` to bypass caching. `audi-capture.mjs` (repo root) captures a
-live form standalone.
+a sanity-checked heuristic fallback. Pass `AUDI_CONCURRENCY=N` to tune parallel
+browsers (lower it if the machine is memory-constrained), `AUDI_HEADFUL=1` to
+watch the browser, `AUDI_NO_CACHE=1` to bypass caching. `audi-capture.mjs` (repo
+root) captures a live form standalone.
 
 ## Sticker-price scraper (`scrape-stickers`)
 

@@ -35,6 +35,7 @@ function buildConfig() {
     audi: {
       noCache: bool(env.AUDI_NO_CACHE) ?? false,
       headful: bool(env.AUDI_HEADFUL) ?? false,
+      concurrency: env.AUDI_CONCURRENCY,
     },
     paths: {
       dataDir,

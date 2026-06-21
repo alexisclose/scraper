@@ -5,6 +5,7 @@ import {
   detectVatBasis,
   parseModel,
   parseTotalPrice,
+  mapBounds,
   extractFromFinanceApi,
   parseAudiOffer,
 } from '../../src/domains/audi/parser.js';
@@ -103,12 +104,46 @@ describe('detectVatBasis', () => {
   });
 });
 
+describe('mapBounds', () => {
+  it('classifies a Long Term Rental layout by value when no meanings given', () => {
+    const b = mapBounds([
+      { componentId: 902, value: '0' },
+      { componentId: 903, value: '60' },
+      { componentId: 904, value: '20000' },
+    ]);
+    expect(b).toEqual({ down: 0, residual: null, term: 60, annualMileage: 20000 });
+  });
+  it('uses the componentId→meaning map to split down vs residual (both 25% by value)', () => {
+    // Financiële Renting: 916=Aankoopoptie(residual), 917=Eerste verhoogde
+    // huur(down) — identical values, only the meanings map can tell them apart.
+    const meanings = { 916: 'residual', 917: 'down', 918: 'term', 919: 'mileage' };
+    const b = mapBounds(
+      [
+        { componentId: 916, value: '8576' },
+        { componentId: 917, value: '5360' },
+        { componentId: 918, value: '60' },
+        { componentId: 919, value: '20000' },
+      ],
+      meanings,
+    );
+    expect(b).toEqual({ down: 5360, residual: 8576, term: 60, annualMileage: 20000 });
+  });
+  it('falls back to value-range classification for an odd layout', () => {
+    const b = mapBounds([{ value: '15000' }, { value: '48' }]);
+    expect(b.term).toBe(48);
+    expect(b.annualMileage).toBe(15000);
+  });
+  it('returns {} for empty input', () => {
+    expect(mapBounds([])).toEqual({});
+  });
+});
+
 describe('extractFromFinanceApi', () => {
   // Verified live shape: POST /ccf/FinanceApi/Calculate returns the monthly with
-  // both VAT bases explicit (captured from a real A3 business-renting session).
-  it('reads the monthly net+gross from a Calculate response', () => {
+  // both VAT bases explicit; its request body carries [down, term, mileage].
+  it('reads the monthly net+gross and the term/mileage/down from a Calculate exchange', () => {
     const responses = [
-      { url: '/ccf/FinanceApi/GetComponentList?lg=nl', json: { BoundIds: [913, 914], Success: true } },
+      { url: '/ccf/FinanceApi/GetComponentList?lg=nl', json: { BoundIds: [902, 903, 904], Success: true } },
       {
         url: 'https://formsccf.audi.be/ccf/FinanceApi/Calculate?lg=nl',
         status: 200,
@@ -119,12 +154,23 @@ describe('extractFromFinanceApi', () => {
           Success: true,
           Status: 0,
         },
+        requestBody: {
+          FamilyId: '314',
+          bounds: [
+            { componentId: 902, value: '0' },
+            { componentId: 903, value: '60' },
+            { componentId: 904, value: '20000' },
+          ],
+        },
       },
     ];
     const f = extractFromFinanceApi(responses);
     expect(f.source).toBe('calculate');
     expect(f.monthlyNet).toBe(528.36);
     expect(f.monthlyGross).toBe(630.84);
+    expect(f.term).toBe(60);
+    expect(f.annualMileage).toBe(20000);
+    expect(f.downNet).toBe(0);
   });
 
   it('reads BalloonRate as a residual percentage when present', () => {
@@ -229,23 +275,28 @@ describe('parseAudiOffer', () => {
       scrapedAt,
       financeApi: [
         {
-          json: {
-            name: 'Financiële Renting',
-            customerType: 'business',
-            monthlyAmount: 412.5,
-            durationMonths: 60,
-            downPayment: 5360.33,
-            residualValue: 8040.5,
+          url: '/ccf/FinanceApi/Calculate?lg=nl',
+          json: { PriceVatExcluded: '528,36', PriceVatIncluded: '630,84', BalloonRate: null, Success: true },
+          requestBody: {
+            FamilyId: '314',
+            bounds: [
+              { componentId: 902, value: '0' },
+              { componentId: 903, value: '60' },
+              { componentId: 904, value: '20000' },
+            ],
           },
         },
       ],
     });
     expect(() => validateOffer(offer)).not.toThrow();
-    // monthly comes from JSON, assumed excl. BTW (net) → gross derived at 21%
-    expect(offer.financialRenting.monthlyNet).toBe(412.5);
-    expect(offer.financialRenting.monthlyGross).toBeCloseTo(499.13, 1);
+    // monthly net+gross both explicit from the Calculate response
+    expect(offer.financialRenting.monthlyNet).toBe(528.36);
+    expect(offer.financialRenting.monthlyGross).toBe(630.84);
+    // term/mileage/down from the Calculate request bounds
     expect(offer.financialRenting.termMonths).toBe(60);
-    expect(offer.financialRenting.downPaymentNet).toBeCloseTo(5360.33, 2);
+    expect(offer.financialRenting.annualMileage).toBe(20000);
+    expect(offer.financialRenting.contractMileage).toBe(100000);
+    expect(offer.financialRenting.downPaymentNet).toBe(0);
     // price still from the HTML
     expect(offer.financialRenting.vehiclePriceGross).toBe(32429.99);
   });

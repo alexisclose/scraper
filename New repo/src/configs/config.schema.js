@@ -33,6 +33,8 @@ export const configSchema = z.object({
     // When true, drive the configurator with a visible browser (useful for
     // debugging the cookie/consent + "Bereken uw maandprijs" click locally).
     headful: z.boolean().default(false),
+    // Number of browsers run in parallel across the model sweep.
+    concurrency: intFromEnv(3),
   }),
 
   paths: z.object({

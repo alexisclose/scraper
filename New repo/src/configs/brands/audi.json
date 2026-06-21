@@ -18,6 +18,7 @@
   "defaults": {
     "durationMonths": 60,
     "annualMileage": 15000,
+    "firstPaymentPct": 0.2,
     "vatRate": 0.21
   }
 }

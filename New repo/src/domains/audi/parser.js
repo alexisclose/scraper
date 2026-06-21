@@ -194,25 +194,55 @@ function scanFinanceNode(json) {
   return best;
 }
 
+// Map the Calculate request's `bounds` array to down-payment / residual / term /
+// annual mileage. The bounds carry only a numeric componentId + value, so we
+// prefer an explicit { componentId: meaning } map captured from the form (the
+// down "Eerste verhoogde huur" and residual "Aankoopoptie" both default to 25%
+// and are indistinguishable by value). For any bound the map doesn't cover we
+// fall back to value ranges: a 6–120 integer is the term, a ≥3000 value is the
+// annual mileage, and the remainder is the down payment.
+export function mapBounds(bounds, meanings = {}) {
+  if (!Array.isArray(bounds) || !bounds.length) return {};
+  const parsed = bounds.map((b) => ({ id: String(b && b.componentId), v: toNumber(b && b.value) }));
+  let down = null;
+  let residual = null;
+  let term = null;
+  let annualMileage = null;
+  const leftover = [];
+  for (const b of parsed) {
+    const m = meanings[b.id];
+    if (m === 'down') down = b.v;
+    else if (m === 'residual') residual = b.v;
+    else if (m === 'term') term = b.v;
+    else if (m === 'mileage') annualMileage = b.v;
+    else leftover.push(b.v);
+  }
+  for (const n of leftover) {
+    if (n == null) continue;
+    if (term == null && Number.isInteger(n) && n >= 6 && n <= 120) term = n;
+    else if (annualMileage == null && n >= 3000) annualMileage = n;
+    else if (down == null) down = n;
+  }
+  return { down, residual, term, annualMileage };
+}
+
 // Public: reduce captured FinanceApi responses to a normalised renting figure
-// set, or null. Returns { monthlyNet, monthlyGross, downNet, term, residualNet,
-// residualPct, source }.
+// set, or null. Returns { monthlyNet, monthlyGross, downNet, term, annualMileage,
+// residualNet, residualPct, source }.
 //
-// Verified shape (configurator-originated session, reCAPTCHA passed):
-//   POST /ccf/FinanceApi/Calculate?lg=nl →
-//     { PriceVatExcluded:"528,36", PriceVatIncluded:"630,84",
-//       BalloonRate:null, Success:true, Status:0 }
-//   PriceVatExcluded/Included are the MONTHLY payment, both VAT bases explicit
-//   (so no assumption needed). BalloonRate, when present, is the residual %.
-// GetComponentList returns only component ids (term/mileage/product metadata),
-// no amounts. We therefore take the monthly from the last successful Calculate;
-// term/mileage/down-payment are not in the response and stay null until read
-// from the Calculate request payload (captured separately) — see fetcher.
-export function extractFromFinanceApi(responses, { logger } = {}) {
+// Verified shapes (configurator-originated session, reCAPTCHA passed):
+//   POST /ccf/FinanceApi/Calculate?lg=nl
+//     response → { PriceVatExcluded:"528,36", PriceVatIncluded:"630,84",
+//                  BalloonRate:null, Success:true }  (monthly, both VAT bases)
+//     request  → { FamilyId, Code, bounds:[down, term, mileage], Token }
+//   The monthly comes from the response; term/mileage/down from the *request*
+//   body the fetcher captures alongside it. GetComponentList returns only
+//   component ids (no amounts).
+export function extractFromFinanceApi(responses, { logger, boundMeanings } = {}) {
   const log = logger || { debug() {}, info() {} };
   const list = responses || [];
 
-  // Precise path: the most recent successful Calculate response.
+  // Precise path: the most recent successful Calculate response (+ its request).
   const calc = [...list]
     .reverse()
     .find((r) => /FinanceApi\/Calculate/i.test(r.url || '') && r.json && r.json.Success);
@@ -225,16 +255,21 @@ export function extractFromFinanceApi(responses, { logger } = {}) {
         balloon != null && balloon !== ''
           ? parseFloat(String(balloon).replace(',', '.')) / 100
           : null;
+      const bounds =
+        calc.requestBody && typeof calc.requestBody === 'object'
+          ? mapBounds(calc.requestBody.bounds, boundMeanings || {})
+          : {};
       const figures = {
         monthlyNet: net,
         monthlyGross: gross,
-        downNet: null,
-        term: null,
-        residualNet: null,
+        downNet: bounds.down ?? null,
+        term: bounds.term ?? null,
+        annualMileage: bounds.annualMileage ?? null,
+        residualNet: bounds.residual ?? null,
         residualPct,
         source: 'calculate',
       };
-      log.info(figures, 'Audi monthly extracted from FinanceApi/Calculate (net+gross explicit)');
+      log.info(figures, 'Audi monthly+terms extracted from FinanceApi/Calculate');
       return figures;
     }
   }
@@ -256,6 +291,7 @@ export function extractFromFinanceApi(responses, { logger } = {}) {
     monthlyGross: best.monthly != null ? netToGross(best.monthly) : null,
     downNet: best.down,
     term: best.term,
+    annualMileage: null,
     residualNet: best.residual,
     residualPct: best.pct,
     source: 'heuristic',
@@ -271,6 +307,7 @@ export function parseAudiOffer({
   scrapedAt,
   logger,
   financeApi,
+  boundMeanings,
 }) {
   const log = logger || { debug() {}, info() {}, warn() {} };
 
@@ -295,6 +332,7 @@ export function parseAudiOffer({
   let downPaymentNet = null;
   let downPaymentGross = null;
   let termMonths = null;
+  let annualMileage = null;
   let contractMileage = null;
   let residualValueNet = null;
   let residualValuePct = null;
@@ -303,7 +341,7 @@ export function parseAudiOffer({
   // Preferred source: the FinanceApi JSON captured by the browser fetcher (the
   // real milesFinance calculation output). The HTML calc block is the fallback
   // for the rare case the figures are server-rendered but no JSON was captured.
-  const apiFigures = extractFromFinanceApi(financeApi, { logger: log });
+  const apiFigures = extractFromFinanceApi(financeApi, { logger: log, boundMeanings });
 
   if (apiFigures) {
     figureSource = `finance-api:${apiFigures.source}`;
@@ -317,9 +355,17 @@ export function parseAudiOffer({
       downPaymentGross = netToGross(apiFigures.downNet);
     }
     termMonths = apiFigures.term ?? null;
+    // The Calculate request quotes mileage per YEAR; contract mileage is the
+    // annual figure across the full term.
+    annualMileage = apiFigures.annualMileage ?? null;
+    contractMileage =
+      annualMileage != null && termMonths ? Math.round((annualMileage * termMonths) / 12) : null;
     residualValueNet = apiFigures.residualNet ?? null;
     residualValuePct = apiFigures.residualPct ?? null;
-    log.info({ code, source: apiFigures.source }, 'Audi renting figures sourced from FinanceApi JSON');
+    log.info(
+      { code, source: apiFigures.source, term: termMonths, annualMileage, downNet: downPaymentNet },
+      'Audi renting figures sourced from FinanceApi JSON',
+    );
   } else if (calcReady) {
     figureSource = 'html-calc';
     const monthly = matchAmount(text, L.monthly);
@@ -343,6 +389,8 @@ export function parseAudiOffer({
     termMonths = termMatch ? parseInt(termMatch[1], 10) : null;
     const kmMatch = L.mileage ? text.match(new RegExp(L.mileage, 'i')) : null;
     contractMileage = kmMatch ? parseInt(kmMatch[1].replace(/[.\s]/g, ''), 10) : null;
+    annualMileage =
+      contractMileage && termMonths ? Math.round((contractMileage / termMonths) * 12) : null;
     if (L.residual) {
       const rm = text.match(new RegExp(L.residual, 'i'));
       if (rm?.[1] != null) residualValueNet = parseEur(rm[1]);
@@ -414,10 +462,7 @@ export function parseAudiOffer({
       downPaymentGross,
       downPaymentPct: derived.downPaymentPct,
       termMonths,
-      annualMileage:
-        contractMileage && termMonths
-          ? Math.round((contractMileage / termMonths) * 12)
-          : null,
+      annualMileage,
       contractMileage,
       interestEffective: derived.interestEffective,
       residualValueNet: derived.residualValueNet,

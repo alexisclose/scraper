@@ -20,17 +20,31 @@ import {
   selectBusinessFinancialRenting,
   readMonthliesByTrim,
   selectTrimAndReadPanel,
+  setDownPaymentAndReadPanel,
   dumpTrimCards,
 } from './browser-actions.js';
 import { buildOffer } from './parser.js';
+import { grossToNet } from '../../libraries/finance/btw.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const brandConfig = brandConfigs.tesla;
 const labels = brandConfig.labels || {};
+const VAT_RATE = brandConfig.defaults?.vatRate ?? 0.21;
+// Down payment to enforce in the configurator, as a fraction of the NET price.
+const DOWN_PAYMENT_PCT = brandConfig.defaults?.firstPaymentPct ?? 0.2;
 
-const CANDIDATE_MODELS = JSON.parse(
+const ALL_CANDIDATE_MODELS = JSON.parse(
   readFileSync(join(__dirname, 'data', 'candidate-models.json'), 'utf8'),
 );
+
+// Optional filter for debugging / partial runs: TESLA_MODELS=model-3,model-y
+const MODEL_FILTER = (process.env.TESLA_MODELS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const CANDIDATE_MODELS = MODEL_FILTER.length
+  ? ALL_CANDIDATE_MODELS.filter((m) => MODEL_FILTER.includes(m.id))
+  : ALL_CANDIDATE_MODELS;
 
 // Open a clean page for a given model. Tesla persists the chosen trim AND the
 // payment-type selection in localStorage/sessionStorage, so without clearing it
@@ -84,27 +98,64 @@ async function scrapeModel(context, model, { logger, runId }) {
     const dropdown = await selectBusinessFinancialRenting(page, labels.businessRentingOption);
     log.info({ model: model.id, dropdown }, 'dropdown switched');
 
-    log.info({ model: model.id }, 'Phase C: reading per-trim monthlies');
+    log.info({ model: model.id }, 'Phase C: reading default per-trim monthlies (fallback source)');
     const monthlyByTrim = await readMonthliesByTrim(page, model.trims, labels.monthlySuffix);
-    log.info({ model: model.id, monthlyByTrim }, 'monthlies');
+    log.info({ model: model.id, monthlyByTrim }, 'default monthlies');
 
     const offers = [];
     for (const trim of model.trims) {
       const trimKey = trim.key;
-      if (cashByTrim[trimKey] == null) {
+      const cashGross = cashByTrim[trimKey];
+      if (cashGross == null) {
         log.warn({ model: model.id, trim: trimKey }, 'trim skipped: no cash price on page');
         continue;
       }
-      log.info({ model: model.id, trim: trimKey }, 'reading panel');
-      const panel = await selectTrimAndReadPanel(page, trim.re, labels);
-      log.info({ model: model.id, trim: trimKey, panel }, 'finance panel values');
+
+      // Down payment we enforce = 20% of the NET catalogue price. Tesla's
+      // configurator field and all financing amounts are excl. BTW, so the base
+      // is the net price (gross / 1.21).
+      const downPaymentNet = Math.round(grossToNet(cashGross, VAT_RATE) * DOWN_PAYMENT_PCT);
+      log.info(
+        { model: model.id, trim: trimKey, cashGross, downPaymentNet, pct: DOWN_PAYMENT_PCT },
+        'setting down payment to 20% of net price',
+      );
+
+      // Preferred: drive the modal, set our down payment, read the recalculated
+      // monthly. Fallback: Tesla's default per-trim reading if the modal flow
+      // fails (so we never lose a row).
+      let panel;
+      let monthlyNetRaw;
+      const set = await setDownPaymentAndReadPanel(page, trim.re, downPaymentNet, labels);
+      if (set.ok && set.monthly) {
+        log.info(
+          {
+            model: model.id,
+            trim: trimKey,
+            monthly: set.monthly,
+            dpField: set.dpFieldValue,
+            dp: set.dp,
+            term: set.term,
+            rv: set.rv,
+          },
+          'recalculated panel (20% down)',
+        );
+        panel = { dp: set.dp, term: set.term, km: set.km, rv: set.rv };
+        monthlyNetRaw = set.monthly;
+      } else {
+        log.warn(
+          { model: model.id, trim: trimKey, reason: set.reason },
+          'down-payment modal flow failed; falling back to Tesla default reading',
+        );
+        panel = await selectTrimAndReadPanel(page, trim.re, labels);
+        monthlyNetRaw = monthlyByTrim[trimKey];
+      }
 
       const offer = buildOffer({
         brandConfig,
         model,
         trimKey,
-        cashGross: cashByTrim[trimKey],
-        monthlyNetRaw: monthlyByTrim[trimKey],
+        cashGross,
+        monthlyNetRaw,
         panelReading: panel,
         url: model.url,
         scrapedAt: runId,
