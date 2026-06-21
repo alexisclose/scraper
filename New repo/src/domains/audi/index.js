@@ -68,6 +68,11 @@ async function run({ logger, runId }) {
   const offers = [];
   const skipped = [];
   const lastReason = new Map(); // model id → last failure reason (for the summary)
+  // model id → a price-only offer (vehicle price parsed, but the form never fired
+  // a finance Calculate so monthly is null). Held back so the model still counts
+  // as a straggler and the zero-contention cleanup pass can retry for a real
+  // monthly; only flushed into `offers` at the end if every retry stayed null.
+  const fallbackOffers = new Map();
 
   // ---- Path 1: direct HTTP for already-minted codes (proxy-aware) ----
   if (CANDIDATE_CODES.length) {
@@ -206,12 +211,21 @@ async function run({ logger, runId }) {
         try {
           const offer = await scrapeModel(lane.context, model);
           lane.noteDone();
-          if (offer) {
+          if (offer && offer.financialRenting.monthlyNet != null) {
             offers.push(offer);
             succeeded.add(model.id);
             return true;
           }
-          lastReason.set(model.id, 'AUDI_OOPS_OR_PARSE'); // null = Oops / parse fail
+          if (offer) {
+            // Vehicle price parsed but no finance calculation (the bound
+            // down-payment control never rendered → no Calculate fired). Keep it
+            // as a fallback but DON'T mark succeeded, so the cleanup pass retries
+            // for a real monthly under zero contention.
+            fallbackOffers.set(model.id, offer);
+            lastReason.set(model.id, 'AUDI_NO_FINANCE_CALC');
+          } else {
+            lastReason.set(model.id, 'AUDI_OOPS_OR_PARSE'); // null = Oops / parse fail
+          }
         } catch (err) {
           const reason = err.message || 'AUDI_CONFIGURATOR_FAILED';
           lastReason.set(model.id, reason);
@@ -273,9 +287,18 @@ async function run({ logger, runId }) {
       }
     }
 
-    // Authoritative failure list (after cleanup) for the summary.
+    // Authoritative failure list (after cleanup) for the summary. For models that
+    // never produced a monthly, fall back to the price-only record (better than
+    // dropping the car entirely) and flag the partial in the summary.
     for (const m of CANDIDATE_MODELS) {
-      if (!succeeded.has(m.id)) skipped.push({ input: m.id, reason: lastReason.get(m.id) || 'unknown' });
+      if (succeeded.has(m.id)) continue;
+      const fallback = fallbackOffers.get(m.id);
+      if (fallback) {
+        offers.push(fallback);
+        skipped.push({ input: m.id, reason: 'AUDI_NO_FINANCE_CALC (vehicle price only)' });
+      } else {
+        skipped.push({ input: m.id, reason: lastReason.get(m.id) || 'unknown' });
+      }
     }
   }
 
