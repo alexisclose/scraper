@@ -19,6 +19,13 @@ export const configSchema = z.object({
     concurrency: intFromEnv(8),
   }),
 
+  bmw: z.object({
+    // Browsers run in parallel across BMW's model sweep, capped lower than HTTP
+    // because BMW's public site rate-limits. The all-brand two-lane runner
+    // overrides this down further while Audi runs concurrently (see scrape.js).
+    concurrency: intFromEnv(4),
+  }),
+
   tesla: z.object({
     cdpPort: intFromEnv(9223),
     chromeExecutable: z.string().optional(),

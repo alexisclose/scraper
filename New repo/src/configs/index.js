@@ -25,6 +25,9 @@ function buildConfig() {
       maxRetries: env.HTTP_MAX_RETRIES,
       concurrency: env.HTTP_CONCURRENCY,
     },
+    bmw: {
+      concurrency: env.BMW_CONCURRENCY,
+    },
     tesla: {
       cdpPort: env.TESLA_CDP_PORT,
       chromeExecutable: env.TESLA_CHROME || undefined,
