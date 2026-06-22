@@ -142,19 +142,77 @@ async function acceptCookies(page, logger) {
 // Selecting it makes milesFinance fire GetComponentList + Calculate for that
 // family (whose default down payment is 25% of the catalogue, excl. BTW).
 async function selectBusinessRenting(page, logger) {
-  // Customer type = Enterprise (business). The radio is hidden behind a label;
-  // click the label so the framework's change handler fires.
-  await page
-    .locator('label[for="enterprise"]')
-    .first()
-    .click({ timeout: 4000, force: true })
-    .catch(() => {});
-  await page.waitForTimeout(1500);
+  // Customer type = Enterprise (business). CRITICAL: the FinancialRenting product
+  // only EXISTS in the DOM once business is selected — in the private view the
+  // cards are EasyLease / AutoCredit, so a fire-and-forget enterprise click that
+  // silently missed left the page in the private view and made the downstream
+  // poll wait the full 25s for a FinancialRenting card that can never appear.
+  // That unverified click was the root cause of the "radio not found" retry
+  // storm. So we click the toggle and VERIFY the product set actually swapped to
+  // the business (renting) families, retrying the click until it does.
+  const businessState = () =>
+    page
+      .evaluate(() => {
+        const ent = document.querySelector('#enterprise');
+        const hasRenting = [...document.querySelectorAll('input[name="financial-pack"]')].some(
+          (r) => {
+            const id = r.getAttribute('data-familyid') || r.value;
+            const ft = document.querySelector(`#financing-type-${id}`);
+            return (
+              (ft && /FinancialRenting/i.test(ft.value)) ||
+              /renting financier/i.test(r.getAttribute('data-tracking-financialname') || '')
+            );
+          },
+        );
+        return { hasEnterprise: !!ent, enterpriseChecked: !!ent?.checked, hasRenting };
+      })
+      .catch(() => ({ hasEnterprise: false, enterpriseChecked: false, hasRenting: false }));
+
+  // Real label click first; fall back to dispatching on the input itself for the
+  // case where the framework hasn't wired the label's handler yet.
+  const clickEnterprise = async () => {
+    const byLabel = await page
+      .locator('label[for="enterprise"]')
+      .first()
+      .click({ timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+    if (byLabel) return;
+    await page
+      .evaluate(() => {
+        const lbl = document.querySelector('label[for="enterprise"]');
+        const inp = document.querySelector('#enterprise');
+        (lbl || inp)?.click();
+        if (inp && !inp.checked) {
+          inp.checked = true;
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+          inp.dispatchEvent(new Event('click', { bubbles: true }));
+        }
+      })
+      .catch(() => {});
+  };
+
+  // Poll-and-click: the toggle exists almost immediately but the product cards
+  // render async, so we wait for `#enterprise` then click until the renting
+  // families are present AND enterprise is checked.
+  let state = await businessState();
+  for (let attempt = 1; attempt <= 10 && !(state.enterpriseChecked && state.hasRenting); attempt += 1) {
+    if (state.hasEnterprise) await clickEnterprise();
+    await page.waitForTimeout(1000);
+    state = await businessState();
+  }
+  logger[state.hasRenting ? 'debug' : 'warn'](
+    state,
+    state.hasRenting
+      ? 'Audi business customer type selected (renting products present)'
+      : 'Audi business switch not confirmed — FinancialRenting card absent',
+  );
+  await page.waitForTimeout(800);
 
   // Identify the FinancialRenting family id (FinancingType === FinancialRenting),
-  // skipping the hidden print-modal duplicates. POLL for it: the product cards
-  // render asynchronously and can lag under parallel load — not waiting here was
-  // the main cause of "radio not found" and the downstream retry storm.
+  // skipping the hidden print-modal duplicates. The business switch above already
+  // guarantees the card is present, so this resolves immediately; the short poll
+  // is just a safety net for a late re-render.
   const findFamily = () =>
     page
       .evaluate(() => {
@@ -175,7 +233,7 @@ async function selectBusinessRenting(page, logger) {
       .catch(() => null);
 
   let familyId = await findFamily();
-  for (let i = 0; i < 25 && !familyId; i += 1) {
+  for (let i = 0; i < 5 && !familyId; i += 1) {
     await page.waitForTimeout(1000);
     familyId = await findFamily();
   }
