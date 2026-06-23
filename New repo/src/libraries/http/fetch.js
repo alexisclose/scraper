@@ -1,3 +1,11 @@
+import { ProxyAgent, setGlobalDispatcher } from 'undici';
+
+const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+
+if (proxyUrl) {
+  setGlobalDispatcher(new ProxyAgent(proxyUrl));
+}
+
 // HTTP fetch wrapper: timeout via AbortController, exponential-backoff retry
 // via p-retry, and a global concurrency limit shared across all callers in a
 // scrape run. Uses the platform `fetch` (Node 20+).
