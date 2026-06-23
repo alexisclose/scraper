@@ -51,7 +51,7 @@ describe('leaseOfferSchema', () => {
   });
 
   it('rejects unknown brand', () => {
-    const bad = { ...validOffer, brand: 'audi' };
+    const bad = { ...validOffer, brand: 'porsche' };
     expect(() => validateOffer(bad)).toThrow();
   });
 

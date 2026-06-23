@@ -26,7 +26,25 @@ async function run({ logger, runId }) {
     }),
   );
   const results = await Promise.all(tasks);
-  return results.filter(Boolean);
+  const offers = results.filter(Boolean);
+
+  // Some slugs are aliases for the same trim (e.g. id4-pro and
+  // id4-pure-business-essential resolve to an identical offer). Dedupe on the
+  // offer's identifying content so the report carries each car once.
+  const seen = new Set();
+  const unique = [];
+  for (const offer of offers) {
+    const f = offer.financialRenting;
+    const key = `${offer.modelName}|${f.monthlyNet}|${f.vehiclePriceNet}|${f.termMonths}`;
+    if (seen.has(key)) {
+      logger.debug({ slug: offer.slug, key }, 'VW duplicate offer skipped');
+      continue;
+    }
+    seen.add(key);
+    unique.push(offer);
+  }
+  logger.info({ parsed: offers.length, unique: unique.length }, 'VW offers deduped');
+  return unique;
 }
 
 const adapter = {

@@ -56,7 +56,7 @@ export const financialRentingSchema = z.object({
 
 export const leaseOfferSchema = z.object({
   // Identity — different shape per brand but always present
-  brand: z.enum(['bmw', 'mercedes', 'tesla', 'vw']),
+  brand: z.enum(['bmw', 'mercedes', 'tesla', 'vw', 'audi']),
   url: z.string().url().nullable(),
   slug: z.string().nullable(),
   modelName: z.string(),

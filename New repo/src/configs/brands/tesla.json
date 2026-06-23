@@ -7,8 +7,20 @@
     "model3Design": "https://www.tesla.com/nl_be/model3/design",
     "homepage": "https://www.tesla.com/nl_be/"
   },
+  "labels": {
+    "businessRentingOption": "Zakelijk.*Financi[eë]le Renting.*Lage Afkoopwaarde",
+    "editFinanceTrigger": "Financi[eë]le voorwaarden en besparingen bewerken",
+    "downPaymentInputSelector": "input#cashDownPayment, input[name='cashDownPayment']",
+    "monthlyEstimate": "€\\s*([\\d.,]+)\\s*\\/\\s*mnd",
+    "downPayment": "€\\s*([\\d.,]+)\\s*aanbetaling",
+    "term": "(\\d{2,3})\\s*maanden",
+    "mileage": "([\\d.,]+)\\s*kilometer",
+    "residual": "geschatte restwaarde[^€]{0,20}€\\s*(\\d[\\d.]*\\d|\\d)",
+    "monthlySuffix": "\\/\\s*mnd"
+  },
   "defaults": {
     "durationMonths": 60,
-    "vatRate": 0.21
+    "vatRate": 0.21,
+    "firstPaymentPct": 0.2
   }
 }

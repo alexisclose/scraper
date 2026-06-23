@@ -97,9 +97,13 @@ export function parseVwOffer({ html, url, slug, brandConfig, scrapedAt }) {
   let vehiclePriceNet = null;
   const cat = legalText.match(/catalogusprijs\s*excl\.?\s*BTW[:\s]*€?\s*([\d.,]+)/i);
   if (cat) vehiclePriceNet = parseEur(cat[1]);
-  if (vehiclePriceNet == null) {
+  // VW occasionally truncates the catalogue price in the legal text (e.g. Tayron
+  // renders it as "€ 44."). When the legal value is missing or implausibly small
+  // for a car, fall back to the visible summary price.
+  if (vehiclePriceNet == null || vehiclePriceNet < 1000) {
     const visible = html.match(VISIBLE_CATALOG_RE);
-    if (visible) vehiclePriceNet = parseEur(visible[1]);
+    const v = visible ? parseEur(visible[1]) : null;
+    if (v != null && v >= 1000) vehiclePriceNet = v;
   }
 
   const trimName = deriveTrimName(legalText, slug);

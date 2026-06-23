@@ -7,6 +7,7 @@ import { hideBin } from 'yargs/helpers';
 import { logger } from './libraries/log/logger.js';
 import { AppError } from './libraries/error-handling/AppError.js';
 import { scrapeCommand } from './commands/scrape.js';
+import { scrapeStickersCommand } from './commands/scrape-stickers.js';
 import { buildExcelCommand } from './commands/build-excel.js';
 
 process.on('unhandledRejection', (err) => {
@@ -26,8 +27,9 @@ process.on('uncaughtException', (err) => {
 await yargs(hideBin(process.argv))
   .scriptName('be-lease-scraper')
   .command(scrapeCommand)
+  .command(scrapeStickersCommand)
   .command(buildExcelCommand)
-  .demandCommand(1, 'Please specify a command (scrape | build-excel)')
+  .demandCommand(1, 'Please specify a command (scrape | scrape-stickers | build-excel)')
   .strict()
   .help()
   .parseAsync();

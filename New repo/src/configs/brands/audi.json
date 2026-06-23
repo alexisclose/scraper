@@ -1,0 +1,24 @@
+{
+  "id": "audi",
+  "displayName": "Audi",
+  "productName": "Audi Financial Services — Financiële Renting",
+  "productId": "AUDI_FIN_RENTING",
+  "endpoints": {
+    "home": "https://www.audi.be/nl/",
+    "ccfFormulaStep": "https://formsccf.audi.be/ccf/nl/finance/formulastep?code={code}"
+  },
+  "_labels_note": "Calc-only labels (monthly/downPayment/term/mileage/residual) are best-effort against the milesFinance widget vocabulary observed on the live form (Maandbedrag, /maand, Laatste maandelijkse betaling). They are only consulted when the page renders a real calculation (data-has-calculation-information=True); that block is reCAPTCHA-gated for automation, so these are usually unused. Vehicle price + model are parsed structurally (not via these labels). Tune these once a calculated page is captured.",
+  "labels": {
+    "monthly": "(?:Maandbedrag|maandprijs|maandelijkse aflossing|huurprijs)[^€]{0,40}€\\s*([\\d .,]+)|€\\s*([\\d .,]+)\\s*\\/\\s*maand",
+    "downPayment": "(?:voorschot|eerste verhoogde huurprijs|aanbetaling)[^€]{0,40}€\\s*([\\d .,]+)",
+    "term": "(?:looptijd|duur)[^\\d]{0,20}(\\d{2,3})\\s*maand|(\\d{2,3})\\s*maanden",
+    "mileage": "([\\d. ]{3,})\\s*(?:km|kilometer)",
+    "residual": "(?:restwaarde|aankoopoptie|laatste (?:huurprijs|maandelijkse betaling|maandaflossing))[^€%]{0,40}(?:€\\s*([\\d .,]+)|(\\d+(?:[.,]\\d+)?)\\s*%)"
+  },
+  "defaults": {
+    "durationMonths": 60,
+    "annualMileage": 15000,
+    "firstPaymentPct": 0.2,
+    "vatRate": 0.21
+  }
+}

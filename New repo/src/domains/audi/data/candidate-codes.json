@@ -1,0 +1,113 @@
+{
+  "_comment": "Audi (Belgium) finance inputs. 'models' are configurator entry points (carline/variant) with a default 'pr=' build string; the browser fetcher opens each, accepts cookies, clicks 'Bereken uw maandprijs' to mint a fresh CCF code, selects the BUSINESS 'Financiële Renting' product, sets the down payment to 20% (defaults.firstPaymentPct in audi.json) and reads the form's recomputed monthly. The pr URLs were discovered+verified from www.audi.be (each redirects to the model's default config summary). To refresh/extend: load a model's /configurator/?#summary, let it resolve a pr, and copy the URL. 'codes' are already-minted CCF codes for the direct-HTTP fast path (price-only; they expire).",
+  "models": [
+    {
+      "id": "a1-sportback",
+      "displayName": "Audi A1 Sportback",
+      "range": "A1",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a1/a1-sportback/configurator/?pr=GBACU40GYEEYEEGYEFYEF_2026%7CB1B1%7CYM%7CMASGEB4%7CMGRA8T6%7CMLRA1XW%7CT222222%7CMEPH7X2%7CGPNAPNA%7CT951951%7CT950950%7CMESSUI2%7CGWAIWAI%7CT222222%7CT951951%7CT950950#summary"
+    },
+    {
+      "id": "a3-sportback",
+      "displayName": "Audi A3 Sportback",
+      "range": "A3",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/a3-sportback/configurator/?pr=8YFANC0_2026%7C2D2D%7CAI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+    },
+    {
+      "id": "s3-sportback",
+      "displayName": "Audi S3 Sportback",
+      "range": "S3",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/s3-sportback/configurator/?pr=8YFS5Y0_2026%7CZ9Z9%7CEI%7CT222222%7CGYEHYEH%7CMASGEB4%7CTQ00Q00%7CT930930%7CT222222%7CTQ00Q00%7CT930930#summary"
+    },
+    {
+      "id": "a5-avant",
+      "displayName": "Audi A5 Avant",
+      "range": "A5",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a5/a5-avant/configurator/?pr=FU5APG3_2026%7CL5L5%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "a6-avant",
+      "displayName": "Audi A6 Avant",
+      "range": "A6",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a6/a6-avant/configurator/?pr=FN5AZG6_2026%7C5U5U%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "a6-sportback-e-tron",
+      "displayName": "Audi A6 Sportback e-tron",
+      "range": "A6 e-tron",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a6-e-tron/a6-sportback-e-tron/configurator/?pr=GHAABA0_2027%7CG5G5%7CMI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+    },
+    {
+      "id": "a6-avant-e-tron",
+      "displayName": "Audi A6 Avant e-tron",
+      "range": "A6 e-tron",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a6-e-tron/a6-avant-e-tron/configurator/?pr=GH5ABA0_2027%7CG5G5%7CMI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+    },
+    {
+      "id": "q2",
+      "displayName": "Audi Q2",
+      "range": "Q2",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q2/q2/configurator/?pr=GAGCMC0MRADV68GYEEYEE_2026%7CB1B1%7CYS%7CMSDH4E7%7CMASGEB4%7CGPWBPWB%7CGPYIPYI%7CMNAV7UG%7CT222222%7CMGRA8T6%7CMHKA9AK%7CMCPAIT3%7CT951951%7CMONLEL5%7CT950950%7CGWAIWAI%7CT222222%7CT951951%7CT950950#summary"
+    },
+    {
+      "id": "q3-suv",
+      "displayName": "Audi Q3 SUV",
+      "range": "Q3",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-suv/configurator/?pr=FJBAZG1_2026%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "q3-sportback",
+      "displayName": "Audi Q3 Sportback",
+      "range": "Q3",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-sportback/configurator/?pr=FJNAZG1_2026%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "q5-suv",
+      "displayName": "Audi Q5 SUV",
+      "range": "Q5",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q5/q5-suv/configurator/?pr=GUBAZG1_2026%7CM4M4%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "q5-sportback",
+      "displayName": "Audi Q5 Sportback",
+      "range": "Q5",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q5/q5-sportback/configurator/?pr=GUNAZG1_2026%7CL5L5%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+    },
+    {
+      "id": "q6-e-tron",
+      "displayName": "Audi Q6 e-tron",
+      "range": "Q6 e-tron",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q6-e-tron/q6-e-tron/configurator/?pr=GFBA1A0GWASWASGYEBYEB_2027%7CH1H1%7CFW%7CMHSW8IY%7CT222222%7CMASGEB4%7CMEIH5TG%7CGPWAPWA%7CGPQ1PQ1%7CGYEEYEE%7CGYEHYEH%7CGYEDYED%7CT222222#summary"
+    },
+    {
+      "id": "q6-sportback-e-tron",
+      "displayName": "Audi Q6 Sportback e-tron",
+      "range": "Q6 e-tron",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q6-e-tron/q6-sportback-e-tron/configurator/?pr=GFNA1A0GWASWASGYEBYEB_2027%7CH1H1%7CFW%7CMHSW8IY%7CT222222%7CMASGEB4%7CMEIH5TG%7CGYEDYED%7CGPWAPWA%7CGPQ1PQ1%7CGYEEYEE%7CGYEHYEH%7CT222222#summary"
+    },
+    {
+      "id": "q8",
+      "displayName": "Audi Q8",
+      "range": "Q8",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q8/q8-suv/configurator/?pr=4MT0N20_2027%7C0Q0Q%7CRJ%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+    },
+    {
+      "id": "e-tron-gt-quattro",
+      "displayName": "Audi e-tron GT quattro",
+      "range": "e-tron GT",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/e-tron-gt/e-tron-gt-quattro/configurator/?pr=F8PRWD0_2027%7C9W9W%7CJN%7CT222222%7CGYEKYEK%7CMASGEA9%7CT222222#summary"
+    },
+    {
+      "id": "rs-e-tron-gt",
+      "displayName": "Audi RS e-tron GT",
+      "range": "e-tron GT",
+      "configuratorUrl": "https://www.audi.be/nl/modellen/e-tron-gt/rs-e-tron-gt/configurator/?pr=F8PR6D0_2027%7CZ9Z9%7CJN%7CGYEKYEK%7CT222222%7CMASGEA9%7CMLUM7HD%7CMVOSQ1J%7CMKMS4D3%7CMSIBN0Q%7CT222222#summary"
+    }
+  ],
+  "codes": [
+    {
+      "code": "AB8YS3VH",
+      "note": "Example A3 finance code from the task (direct-HTTP smoke input; may expire)."
+    }
+  ]
+}

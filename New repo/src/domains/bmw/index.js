@@ -16,12 +16,15 @@ const MODEL_NAMES = JSON.parse(
   readFileSync(join(__dirname, 'data', 'model-names.json'), 'utf8'),
 );
 
-async function run({ logger, runId }) {
+async function run({ logger, runId, browserConcurrency }) {
   logger.info({ models: MODEL_URLS.length }, 'BMW configurator scrape start');
   const { context, cleanup } = await launchBmwContext();
   try {
     // BMW's public site rate-limits; cap browser concurrency lower than HTTP.
-    const limit = pLimit(Math.min(config.http.concurrency, 4));
+    // `browserConcurrency` lets the all-brand two-lane runner throttle BMW
+    // further while Audi's browser pool runs alongside (see scrape.js).
+    const cap = browserConcurrency ?? config.bmw.concurrency;
+    const limit = pLimit(Math.max(1, Math.min(config.http.concurrency, cap)));
     const tasks = MODEL_URLS.map((url) =>
       limit(async () => {
         try {

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "model-3",
+    "displayName": "Model 3",
+    "range": "Model 3",
+    "slug": "model3",
+    "url": "https://www.tesla.com/nl_be/model3/design",
+    "expectAvailable": true,
+    "trims": [
+      { "key": "Long Range AWD", "re": "long range (all-?wheel drive|awd|dual motor|vierwiel)" },
+      { "key": "Long Range RWD", "re": "long range (achterwielaandrijving|rear-?wheel|rwd)" },
+      { "key": "Performance", "re": "\\bperformance\\b" },
+      {
+        "key": "Achterwielaandrijving (RWD)",
+        "re": "(?<!long range )(achterwielaandrijving|rear-?wheel|\\brwd\\b)"
+      }
+    ]
+  },
+  {
+    "id": "model-y",
+    "displayName": "Model Y",
+    "range": "Model Y",
+    "slug": "modely",
+    "url": "https://www.tesla.com/nl_be/modely/design",
+    "expectAvailable": true,
+    "trims": [
+      { "key": "Long Range AWD", "re": "long range (all-?wheel drive|awd|dual motor|vierwiel)" },
+      { "key": "Long Range RWD", "re": "long range (achterwielaandrijving|rear-?wheel|rwd)" },
+      { "key": "Performance", "re": "\\bperformance\\b" },
+      {
+        "key": "Achterwielaandrijving (RWD)",
+        "re": "(?<!long range )(achterwielaandrijving|rear-?wheel|\\brwd\\b)"
+      }
+    ]
+  },
+  {
+    "id": "model-s",
+    "displayName": "Model S",
+    "range": "Model S",
+    "slug": "models",
+    "url": "https://www.tesla.com/nl_be/models/design",
+    "expectAvailable": false,
+    "note": "BE: /design redirects to the marketing page (/nl_BE/models). No new-car configurator — Model S is inventory/stock only, so no financial-renting flow. Flip to true if Tesla re-enables the BE configurator.",
+    "trims": [
+      { "key": "Plaid", "re": "\\bplaid\\b" },
+      {
+        "key": "Dual Motor AWD",
+        "re": "(?<!plaid )(dual motor|all-?wheel drive|vierwielaandrijving)"
+      }
+    ]
+  },
+  {
+    "id": "model-x",
+    "displayName": "Model X",
+    "range": "Model X",
+    "slug": "modelx",
+    "url": "https://www.tesla.com/nl_be/modelx/design",
+    "expectAvailable": false,
+    "note": "BE: /design redirects to the marketing page (/nl_BE/modelx). No new-car configurator — Model X is inventory/stock only, so no financial-renting flow. Flip to true if Tesla re-enables the BE configurator.",
+    "trims": [
+      { "key": "Plaid", "re": "\\bplaid\\b" },
+      {
+        "key": "Dual Motor AWD",
+        "re": "(?<!plaid )(dual motor|all-?wheel drive|vierwielaandrijving)"
+      }
+    ]
+  },
+  {
+    "id": "cybertruck",
+    "displayName": "Cybertruck",
+    "range": "Cybertruck",
+    "slug": "cybertruck",
+    "url": "https://www.tesla.com/nl_be/cybertruck/design",
+    "expectAvailable": false,
+    "trims": [
+      { "key": "Cyberbeast", "re": "\\bcyberbeast\\b" },
+      { "key": "All-Wheel Drive", "re": "(?<!cyberbeast )(all-?wheel drive|vierwielaandrijving)" }
+    ]
+  }
+]

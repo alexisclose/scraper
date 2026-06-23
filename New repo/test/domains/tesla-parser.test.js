@@ -30,6 +30,29 @@ describe('Tesla parser.buildOffer', () => {
     expect(offer.financialRenting.interestEffective).toBeGreaterThanOrEqual(0);
   });
 
+  it('tags the offer with the supplied model identity (not hardcoded Model 3)', () => {
+    const offer = buildOffer({
+      brandConfig,
+      model: {
+        displayName: 'Model Y',
+        range: 'Model Y',
+        slug: 'modely',
+        url: 'https://www.tesla.com/nl_be/modely/design',
+      },
+      trimKey: 'Long Range AWD',
+      cashGross: 52990,
+      monthlyNetRaw: '479',
+      panelReading: { dp: '7.500', term: '60', km: '100000', rv: '9.200' },
+      scrapedAt,
+    });
+    expect(() => validateOffer(offer)).not.toThrow();
+    expect(offer.modelName).toBe('Tesla Model Y Long Range AWD');
+    expect(offer.modelRange).toBe('Model Y');
+    expect(offer.slug).toBe('modely');
+    expect(offer.modelCode).toBe('Long Range AWD');
+    expect(offer.url).toBe('https://www.tesla.com/nl_be/modely/design');
+  });
+
   it('handles missing monthly gracefully', () => {
     const offer = buildOffer({
       brandConfig,
