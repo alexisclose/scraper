@@ -9,23 +9,32 @@ import bmw from '../domains/bmw/index.js';
 import mercedes from '../domains/mercedes/index.js';
 import tesla from '../domains/tesla/index.js';
 import vw from '../domains/vw/index.js';
+import vwFinance from '../domains/vw-finance/index.js';
 import audi from '../domains/audi/index.js';
 
-const ADAPTERS = { bmw, mercedes, tesla, vw, audi };
+const ADAPTERS = { bmw, mercedes, tesla, vw, 'vw-finance': vwFinance, audi };
 
-// All-brand layout. Audi dominates wall-clock (~66%), so it gets its own lane
-// and everything else runs concurrently in a second, fully serial lane that
-// finishes well inside Audi's runtime. Keeping lane B serial means its browser
-// brands (BMW, Tesla) never stack their Chromes on top of each other, and BMW
-// is throttled below its solo cap so peak Chrome while Audi runs stays modest.
+// All-brand layout. Audi dominates wall-clock, so it gets its own lane and
+// everything else runs concurrently in a second, fully serial lane. Keeping
+// lane B serial means its browser brands (BMW, Tesla, and the configurator-
+// driven vw-finance) never stack their Chromes on top of each other, and the
+// heavy ones are throttled below their solo cap so peak Chrome while Audi runs
+// stays modest. The plain `vw` adapter is pure HTTP (cheap). vw-finance runs
+// last in lane B, so it mostly overlaps Audi's tail.
 const LANE_A = ['audi'];
-const LANE_B = ['bmw', 'tesla', 'mercedes', 'vw'];
-// BMW browser concurrency while it overlaps Audi's pool. Peak Chrome during the
-// BMW window = Audi(3) + BMW(2) = 5; Audi(3) + Tesla(1) = 4 afterwards.
+const LANE_B = ['bmw', 'tesla', 'mercedes', 'vw', 'vw-finance'];
+// Browser concurrency for lane B's heavy brands while they overlap Audi's pool,
+// so peak Chrome stays modest: Audi(3) + BMW(2) = 5 in the BMW window, and
+// Audi(3) + vw-finance(2) = 5 in the vw-finance window (it runs last, overlapping
+// Audi's tail).
 const LANE_B_BMW_CONCURRENCY = 2;
+const LANE_B_VW_FINANCE_CONCURRENCY = 2;
 
 // Per-brand run-option overrides used only in the two-lane (all-brand) layout.
-const TWO_LANE_OPTS = { bmw: { browserConcurrency: LANE_B_BMW_CONCURRENCY } };
+const TWO_LANE_OPTS = {
+  bmw: { browserConcurrency: LANE_B_BMW_CONCURRENCY },
+  'vw-finance': { browserConcurrency: LANE_B_VW_FINANCE_CONCURRENCY },
+};
 
 // Scrape one brand, persist its snapshot, and return an exit code (0/1). Never
 // throws — every brand is isolated so one failure can't sink the others.
@@ -58,7 +67,7 @@ export const scrapeCommand = {
       .option('brand', {
         type: 'string',
         describe: 'Brand to scrape',
-        choices: ['bmw', 'mercedes', 'tesla', 'vw', 'audi', 'all'],
+        choices: ['bmw', 'mercedes', 'tesla', 'vw', 'vw-finance', 'audi', 'all'],
         default: 'all',
       })
       .option('out', {

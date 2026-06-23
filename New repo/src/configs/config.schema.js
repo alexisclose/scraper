@@ -33,6 +33,17 @@ export const configSchema = z.object({
 
   vw: z.object({
     noCache: z.boolean().default(false),
+    // The knobs below drive the configurator-based `vw-finance` adapter (the
+    // plain `vw` adapter is pure HTTP and ignores them).
+    // When true, drive the configurator with a visible browser (debugging the
+    // cookie wall + "Bereken mijn maandprijs" click locally).
+    headful: z.boolean().default(false),
+    // Number of browsers run in parallel across the trim sweep.
+    concurrency: intFromEnv(3),
+    // oneapi.volkswagen.com x-api-key used to resolve each trim's default
+    // modelId (E-code). It's the public key the configurator JS itself sends;
+    // override via VW_ONEAPI_KEY if VW rotates it.
+    oneapiKey: z.string().default('Ox5AegtsLDecFmKHxYdf599VKBCpHsX4'),
   }),
 
   audi: z.object({
@@ -53,7 +64,7 @@ export const configSchema = z.object({
 });
 
 export const brandConfigSchema = z.object({
-  id: z.enum(['bmw', 'mercedes', 'tesla', 'vw', 'audi']),
+  id: z.enum(['bmw', 'mercedes', 'tesla', 'vw', 'vw-finance', 'audi']),
   displayName: z.string(),
   productName: z.string(),
   productId: z.string(),

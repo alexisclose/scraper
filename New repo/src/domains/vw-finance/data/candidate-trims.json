@@ -1,0 +1,410 @@
+{
+  "_comment": "VW (Belgium) configurator inputs — best-deals trim descriptors scraped from www.volkswagen.be/nl/modellen.html. The fetcher resolves each trim’s default modelId (E-code) at runtime via oneapi.volkswagen.com/viso/catalogue/models, builds the configurator summary URL, opens it in a browser, clicks “Bereken mijn maandprijs” to mint a fresh CCF code at formsccf.volkswagen.be, selects the BUSINESS “Professionelen” customer type + “Financiële Renting” product, sets the down payment to 20%, and reads the form’s recomputed monthly. This file is a committed fallback; the fetcher prefers live nav-tree discovery. To refresh: re-run vw-gen-trims.mjs.",
+  "trims": [
+    {
+      "id": "golf__life-business",
+      "carlineSlug": "golf",
+      "trimSlug": "life-business",
+      "carlineId": "30602",
+      "salesgroupId": "32471",
+      "trimId": "Life Business",
+      "name": "Life Business"
+    },
+    {
+      "id": "golf__r-line-business-premium",
+      "carlineSlug": "golf",
+      "trimSlug": "r-line-business-premium",
+      "carlineId": "30602",
+      "salesgroupId": "32472",
+      "trimId": "R-Line Business Premium",
+      "name": "R-Line Business Premium"
+    },
+    {
+      "id": "golf__style-business-premium",
+      "carlineSlug": "golf",
+      "trimSlug": "style-business-premium",
+      "carlineId": "30602",
+      "salesgroupId": "32472",
+      "trimId": "Style Business Premium",
+      "name": "Style Business Premium"
+    },
+    {
+      "id": "golf-variant__life-business",
+      "carlineSlug": "golf-variant",
+      "trimSlug": "life-business",
+      "carlineId": "30652",
+      "salesgroupId": "32482",
+      "trimId": "Life Business",
+      "name": "Life Business"
+    },
+    {
+      "id": "golf-variant__r-line-business-premium",
+      "carlineSlug": "golf-variant",
+      "trimSlug": "r-line-business-premium",
+      "carlineId": "30652",
+      "salesgroupId": "32483",
+      "trimId": "R-Line Business Premium",
+      "name": "R-Line Business Premium"
+    },
+    {
+      "id": "golf-variant__style-business-premium",
+      "carlineSlug": "golf-variant",
+      "trimSlug": "style-business-premium",
+      "carlineId": "30652",
+      "salesgroupId": "32483",
+      "trimId": "Style Business Premium",
+      "name": "Style Business Premium"
+    },
+    {
+      "id": "id-4__id-4-pro-business-sport",
+      "carlineSlug": "id-4",
+      "trimSlug": "id-4-pro-business-sport",
+      "carlineId": "30290",
+      "salesgroupId": "33607",
+      "trimId": "Pro Business Sport",
+      "name": "Pro Business Sport"
+    },
+    {
+      "id": "id-4__id4-pro-business",
+      "carlineSlug": "id-4",
+      "trimSlug": "id4-pro-business",
+      "carlineId": "30290",
+      "salesgroupId": "33605",
+      "trimId": "Pro Business",
+      "name": "Pro Business"
+    },
+    {
+      "id": "id-4__id4-pro-business-essential",
+      "carlineSlug": "id-4",
+      "trimSlug": "id4-pro-business-essential",
+      "carlineId": "30290",
+      "salesgroupId": "33604",
+      "trimId": "Pro Business Essential",
+      "name": "Pro Business Essential"
+    },
+    {
+      "id": "id-4__id4-pro-business-premium",
+      "carlineSlug": "id-4",
+      "trimSlug": "id4-pro-business-premium",
+      "carlineId": "30290",
+      "salesgroupId": "33606",
+      "trimId": "Pro Business Premium",
+      "name": "Pro Business Premium"
+    },
+    {
+      "id": "id-4__id4-pure-business",
+      "carlineSlug": "id-4",
+      "trimSlug": "id4-pure-business",
+      "carlineId": "30290",
+      "salesgroupId": "33605",
+      "trimId": "Pure Business",
+      "name": "Pure Business"
+    },
+    {
+      "id": "id-5__id-5-pro-business",
+      "carlineSlug": "id-5",
+      "trimSlug": "id-5-pro-business",
+      "carlineId": "30396",
+      "salesgroupId": "33614",
+      "trimId": "Pro Business",
+      "name": "Pro Business"
+    },
+    {
+      "id": "id-5__id-5-pro-business-sport",
+      "carlineSlug": "id-5",
+      "trimSlug": "id-5-pro-business-sport",
+      "carlineId": "30396",
+      "salesgroupId": "33617",
+      "trimId": "Pro Business Sport",
+      "name": "Pro Business Sport"
+    },
+    {
+      "id": "id-5__id-5-pure-business",
+      "carlineSlug": "id-5",
+      "trimSlug": "id-5-pure-business",
+      "carlineId": "30396",
+      "salesgroupId": "33614",
+      "trimId": "Pure Business",
+      "name": "Pure Business"
+    },
+    {
+      "id": "id-5__id5-pro-business-premium",
+      "carlineSlug": "id-5",
+      "trimSlug": "id5-pro-business-premium",
+      "carlineId": "30396",
+      "salesgroupId": "33616",
+      "trimId": "Pro Business Premium",
+      "name": "Pro Business Premium"
+    },
+    {
+      "id": "id-7__id-7-pro-business",
+      "carlineSlug": "id-7",
+      "trimSlug": "id-7-pro-business",
+      "carlineId": "31520",
+      "salesgroupId": "33622",
+      "trimId": "Pro S Business Premium",
+      "name": "Pro S Business Premium"
+    },
+    {
+      "id": "id-7__id-7-pro-business-premium",
+      "carlineSlug": "id-7",
+      "trimSlug": "id-7-pro-business-premium",
+      "carlineId": "31520",
+      "salesgroupId": "33622",
+      "trimId": "Pro Business Premium",
+      "name": "Pro Business Premium"
+    },
+    {
+      "id": "id-7__id-7-pro-business-sport",
+      "carlineSlug": "id-7",
+      "trimSlug": "id-7-pro-business-sport",
+      "carlineId": "31520",
+      "salesgroupId": "33623",
+      "trimId": "Pro Business Sport",
+      "name": "Pro Business Sport"
+    },
+    {
+      "id": "id-7__id-7-pure-business-premium",
+      "carlineSlug": "id-7",
+      "trimSlug": "id-7-pure-business-premium",
+      "carlineId": "31520",
+      "salesgroupId": "33622",
+      "trimId": "Pure Business Premium",
+      "name": "Pure Business Premium"
+    },
+    {
+      "id": "id-7__pro-s-business-sport",
+      "carlineSlug": "id-7",
+      "trimSlug": "pro-s-business-sport",
+      "carlineId": "31520",
+      "salesgroupId": "33623",
+      "trimId": "Pro S Business Sport",
+      "name": "Pro S Business Sport"
+    },
+    {
+      "id": "id-7-tourer__id-7-tourer-business-premium",
+      "carlineSlug": "id-7-tourer",
+      "trimSlug": "id-7-tourer-business-premium",
+      "carlineId": "31525",
+      "salesgroupId": "33627",
+      "trimId": "Pro Business Premium",
+      "name": "Pro Business Premium"
+    },
+    {
+      "id": "id-7-tourer__id-7-tourer-pro-business-sport",
+      "carlineSlug": "id-7-tourer",
+      "trimSlug": "id-7-tourer-pro-business-sport",
+      "carlineId": "31525",
+      "salesgroupId": "33628",
+      "trimId": "Pro Business Sport",
+      "name": "Pro Business Sport"
+    },
+    {
+      "id": "id-7-tourer__id-7-tourer-pro-s-business-sport",
+      "carlineSlug": "id-7-tourer",
+      "trimSlug": "id-7-tourer-pro-s-business-sport",
+      "carlineId": "31525",
+      "salesgroupId": "33628",
+      "trimId": "Pro S Business Sport",
+      "name": "Pro S Business Sport"
+    },
+    {
+      "id": "id-7-tourer__id-7-tourer-pure-business-premium",
+      "carlineSlug": "id-7-tourer",
+      "trimSlug": "id-7-tourer-pure-business-premium",
+      "carlineId": "31525",
+      "salesgroupId": "33627",
+      "trimId": "Pure Business Premium",
+      "name": "Pure Business Premium"
+    },
+    {
+      "id": "id-7-tourer__pro-s-business-premium",
+      "carlineSlug": "id-7-tourer",
+      "trimSlug": "pro-s-business-premium",
+      "carlineId": "31525",
+      "salesgroupId": "33627",
+      "trimId": "Pro S Business Premium",
+      "name": "Pro S Business Premium"
+    },
+    {
+      "id": "passat__elegance-business-premium",
+      "carlineSlug": "passat",
+      "trimSlug": "elegance-business-premium",
+      "carlineId": "31356",
+      "salesgroupId": "32542",
+      "trimId": "Passat Elegance Business Premium",
+      "name": "Passat Elegance Business Premium"
+    },
+    {
+      "id": "passat__r-line-business-premium",
+      "carlineSlug": "passat",
+      "trimSlug": "r-line-business-premium",
+      "carlineId": "31356",
+      "salesgroupId": "32542",
+      "trimId": "Passat R-Line Business Premium",
+      "name": "Passat R-Line Business Premium"
+    },
+    {
+      "id": "passat__style-business",
+      "carlineSlug": "passat",
+      "trimSlug": "style-business",
+      "carlineId": "31356",
+      "salesgroupId": "32541",
+      "trimId": "Passat Style Business",
+      "name": "Passat Style Business"
+    },
+    {
+      "id": "polo__polo-goal-edition",
+      "carlineSlug": "polo",
+      "trimSlug": "polo-goal-edition",
+      "carlineId": "30305",
+      "salesgroupId": "33407",
+      "trimId": "GOAL Edition",
+      "name": "GOAL Edition"
+    },
+    {
+      "id": "polo__polo-r-line-edition",
+      "carlineSlug": "polo",
+      "trimSlug": "polo-r-line-edition",
+      "carlineId": "30305",
+      "salesgroupId": "33408",
+      "trimId": "R-Line Edition",
+      "name": "R-Line Edition"
+    },
+    {
+      "id": "polo__r-line",
+      "carlineSlug": "polo",
+      "trimSlug": "r-line",
+      "carlineId": "30305",
+      "salesgroupId": "33405",
+      "trimId": "R-Line",
+      "name": "R-Line"
+    },
+    {
+      "id": "polo__style",
+      "carlineSlug": "polo",
+      "trimSlug": "style",
+      "carlineId": "30305",
+      "salesgroupId": "33405",
+      "trimId": "Style",
+      "name": "Style"
+    },
+    {
+      "id": "t-cross__goal-edition",
+      "carlineSlug": "t-cross",
+      "trimSlug": "goal-edition",
+      "carlineId": "30253",
+      "salesgroupId": "33444",
+      "trimId": "GOAL Edition",
+      "name": "GOAL Edition"
+    },
+    {
+      "id": "t-cross__life",
+      "carlineSlug": "t-cross",
+      "trimSlug": "life",
+      "carlineId": "30253",
+      "salesgroupId": "33440",
+      "trimId": "Life",
+      "name": "Life"
+    },
+    {
+      "id": "t-cross__r-line",
+      "carlineSlug": "t-cross",
+      "trimSlug": "r-line",
+      "carlineId": "30253",
+      "salesgroupId": "33440",
+      "trimId": "R-Line",
+      "name": "R-Line"
+    },
+    {
+      "id": "t-cross__r-line-edition",
+      "carlineSlug": "t-cross",
+      "trimSlug": "r-line-edition",
+      "carlineId": "30253",
+      "salesgroupId": "33442",
+      "trimId": "R-Line Edition",
+      "name": "R-Line Edition"
+    },
+    {
+      "id": "t-roc-cabrio__t-roc-cabrio-r-line",
+      "carlineSlug": "t-roc-cabrio",
+      "trimSlug": "t-roc-cabrio-r-line",
+      "carlineId": "30375",
+      "salesgroupId": "32446",
+      "trimId": "R-Line",
+      "name": "R-Line"
+    },
+    {
+      "id": "t-roc-cabrio__t-roc-cabrio-r-line-ultimate",
+      "carlineSlug": "t-roc-cabrio",
+      "trimSlug": "t-roc-cabrio-r-line-ultimate",
+      "carlineId": "30375",
+      "salesgroupId": "32447",
+      "trimId": "R-Line Ultimate",
+      "name": "R-Line Ultimate"
+    },
+    {
+      "id": "t-roc-cabrio__t-roc-cabrio-r-line-ultimate-black",
+      "carlineSlug": "t-roc-cabrio",
+      "trimSlug": "t-roc-cabrio-r-line-ultimate-black",
+      "carlineId": "30375",
+      "salesgroupId": "32448",
+      "trimId": "R-Line Ultimate Black",
+      "name": "R-Line Ultimate Black"
+    },
+    {
+      "id": "t-roc-cabrio__t-roc-cabrio-style-ultimate",
+      "carlineSlug": "t-roc-cabrio",
+      "trimSlug": "t-roc-cabrio-style-ultimate",
+      "carlineId": "30375",
+      "salesgroupId": "32447",
+      "trimId": "Style Ultimate",
+      "name": "Style Ultimate"
+    },
+    {
+      "id": "t-roc-cabrio__t-roc-cabrio-style-ultimate-black",
+      "carlineSlug": "t-roc-cabrio",
+      "trimSlug": "t-roc-cabrio-style-ultimate-black",
+      "carlineId": "30375",
+      "salesgroupId": "32448",
+      "trimId": "Style Ultimate Black",
+      "name": "Style Ultimate Black"
+    },
+    {
+      "id": "taigo__taigo-goal-edition",
+      "carlineSlug": "taigo",
+      "trimSlug": "taigo-goal-edition",
+      "carlineId": "30260",
+      "salesgroupId": "33418",
+      "trimId": "GOAL Edition",
+      "name": "GOAL Edition"
+    },
+    {
+      "id": "taigo__taigo-life",
+      "carlineSlug": "taigo",
+      "trimSlug": "taigo-life",
+      "carlineId": "30260",
+      "salesgroupId": "33420",
+      "trimId": "Life",
+      "name": "Life"
+    },
+    {
+      "id": "taigo__taigo-r-line",
+      "carlineSlug": "taigo",
+      "trimSlug": "taigo-r-line",
+      "carlineId": "30260",
+      "salesgroupId": "33420",
+      "trimId": "R-Line",
+      "name": "R-Line"
+    },
+    {
+      "id": "taigo__taigo-r-line-edition",
+      "carlineSlug": "taigo",
+      "trimSlug": "taigo-r-line-edition",
+      "carlineId": "30260",
+      "salesgroupId": "33422",
+      "trimId": "R-Line Edition",
+      "name": "R-Line Edition"
+    }
+  ]
+}

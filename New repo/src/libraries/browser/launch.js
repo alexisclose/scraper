@@ -9,13 +9,48 @@
 //                       success rate against Akamai.
 import net from 'node:net';
 import { mkdirSync } from 'node:fs';
-import { spawn } from 'node:child_process';
+import { spawn, execFile } from 'node:child_process';
 import { join } from 'node:path';
 import { chromium } from 'patchright';
 import { config } from '../../configs/index.js';
 import { findChromeExecutable } from './chrome-detect.js';
 import { logger } from '../log/logger.js';
 import { BrowserError } from '../error-handling/AppError.js';
+
+// Terminate the detached `spawn-cdp` Chrome whose --user-data-dir matches
+// `profileDir`. browser().close() only DISCONNECTS the CDP session — the Chrome
+// we spawned was detached + unref'd, so its OS process (and its renderer/gpu
+// children) keep running. A long many-model sweep that recycles its browser
+// every few models would otherwise pile up dozens of zombie Chromes and exhaust
+// memory. Best-effort + cross-platform; never throws.
+export function killChromeByProfileDir(profileDir) {
+  if (!profileDir) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => resolve();
+    try {
+      if (process.platform === 'win32') {
+        // Match chrome.exe processes whose command line contains this exact
+        // profile dir, then kill each. CommandLine matching is the only reliable
+        // way to target just our spawned instance (not the user's own Chrome).
+        const safe = profileDir.replace(/'/g, "''");
+        const ps =
+          `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | ` +
+          `Where-Object { $_.CommandLine -like '*${safe}*' } | ` +
+          `ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
+        execFile(
+          'powershell.exe',
+          ['-NoProfile', '-NonInteractive', '-Command', ps],
+          { timeout: 20000, windowsHide: true },
+          done,
+        );
+      } else {
+        execFile('pkill', ['-f', profileDir], { timeout: 20000 }, done);
+      }
+    } catch {
+      done();
+    }
+  });
+}
 
 function isPortOpen(port, { host = '127.0.0.1', timeout = 800 } = {}) {
   return new Promise((resolve) => {

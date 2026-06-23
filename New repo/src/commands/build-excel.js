@@ -9,9 +9,10 @@ import bmw from '../domains/bmw/index.js';
 import mercedes from '../domains/mercedes/index.js';
 import tesla from '../domains/tesla/index.js';
 import vw from '../domains/vw/index.js';
+import vwFinance from '../domains/vw-finance/index.js';
 import audi from '../domains/audi/index.js';
 
-const ADAPTERS = [bmw, mercedes, tesla, vw, audi];
+const ADAPTERS = [bmw, mercedes, tesla, vw, vwFinance, audi];
 
 export const buildExcelCommand = {
   command: 'build-excel',

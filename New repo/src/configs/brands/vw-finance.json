@@ -1,0 +1,28 @@
+{
+  "id": "vw-finance",
+  "displayName": "Volkswagen Finance",
+  "productName": "Volkswagen Financial Services — Financiële Renting",
+  "productId": "VW_FIN_RENTING",
+  "endpoints": {
+    "home": "https://www.volkswagen.be/nl/",
+    "modelsPage": "https://www.volkswagen.be/nl/modellen.html",
+    "configurator": "https://www.volkswagen.be/nl/configurator.html",
+    "ccfFormulaStep": "https://formsccf.volkswagen.be/ccf/nl/finance/formulastep?code={code}",
+    "catalogueModels": "https://oneapi.volkswagen.com/viso/catalogue/models",
+    "tenant": "ihdcc-vw-be-nl"
+  },
+  "_labels_note": "Calc-only labels (monthly/downPayment/term/mileage/residual) mirror the Audi config — the VW CCF form (formsccf.volkswagen.be) is the SAME D'Ieteren milesFinance widget as Audi's, so the vocabulary (Maandbedrag, /maand, eerste verhoogde huur, aankoopoptie) is identical. They are only consulted when the page renders a real calculation (data-has-calculation-information=True); that block is reCAPTCHA-gated for automation, so the real figures normally come from the captured FinanceApi/Calculate JSON. Vehicle price + model are parsed structurally.",
+  "labels": {
+    "monthly": "(?:Maandbedrag|maandprijs|maandelijkse aflossing|huurprijs)[^€]{0,40}€\\s*([\\d .,]+)|€\\s*([\\d .,]+)\\s*\\/\\s*maand",
+    "downPayment": "(?:voorschot|eerste verhoogde huurprijs|aanbetaling)[^€]{0,40}€\\s*([\\d .,]+)",
+    "term": "(?:looptijd|duur)[^\\d]{0,20}(\\d{2,3})\\s*maand|(\\d{2,3})\\s*maanden",
+    "mileage": "([\\d. ]{3,})\\s*(?:km|kilometer)",
+    "residual": "(?:restwaarde|aankoopoptie|laatste (?:huurprijs|maandelijkse betaling|maandaflossing))[^€%]{0,40}(?:€\\s*([\\d .,]+)|(\\d+(?:[.,]\\d+)?)\\s*%)"
+  },
+  "defaults": {
+    "durationMonths": 60,
+    "annualMileage": 15000,
+    "firstPaymentPct": 0.2,
+    "vatRate": 0.21
+  }
+}

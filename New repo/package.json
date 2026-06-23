@@ -14,6 +14,7 @@
     "scrape:mercedes": "node src/index.js scrape --brand=mercedes",
     "scrape:tesla": "node src/index.js scrape --brand=tesla",
     "scrape:vw": "node src/index.js scrape --brand=vw",
+    "scrape:vw-finance": "node src/index.js scrape --brand=vw-finance",
     "scrape:audi": "node src/index.js scrape --brand=audi",
     "scrape:stickers": "node src/index.js scrape-stickers",
     "build-excel": "node src/index.js build-excel",
