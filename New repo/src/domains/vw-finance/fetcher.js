@@ -743,9 +743,9 @@ export async function mintFromConfigurator(
   let boundMeanings = {};
   let downVerified = false;
   await finalPage.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
-  // The form usually opens in a popup/background tab; Chrome skips layout for
-  // backgrounded pages, so the product cards stay 0×0 and unclickable. Bring it
-  // to front so it lays out before we drive the renting selection.
+  // The form often opens in a popup/background tab; bring it to front so it lays
+  // out and is interactable before we dismiss its cookie overlay and drive the
+  // renting selection.
   await finalPage.bringToFront().catch(() => {});
   await finalPage.waitForTimeout(2000);
   if (!/\/Base\/Oops/i.test(finalUrl)) {
