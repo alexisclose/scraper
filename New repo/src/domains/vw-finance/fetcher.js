@@ -358,17 +358,22 @@ async function selectBusinessRenting(page, logger) {
     await page.evaluate(() => document.querySelector('label[for="enterprise"]')?.click()).catch(() => {});
   };
 
+  // Gate on the REAL signal that business engaged: the FinancialRenting families
+  // are present in the DOM (hasRenting) and #enterprise is checked. (Earlier code
+  // gated on `.finance__content__packs` visibility, but that container is flaky to
+  // read — multiple desktop/mobile copies — and produced false "not revealed"
+  // warnings even when the switch had actually worked. Mirrors the Audi helper.)
   let s = await state();
-  for (let attempt = 1; attempt <= 12 && !(s.packsVisible && s.hasRenting); attempt += 1) {
+  for (let attempt = 1; attempt <= 12 && !(s.enterpriseChecked && s.hasRenting); attempt += 1) {
     if (s.hasEnterprise) await clickEnterprise();
     await page.waitForTimeout(1200);
     s = await state();
   }
-  logger[s.packsVisible && s.hasRenting ? 'debug' : 'warn'](
+  logger[s.hasRenting ? 'debug' : 'warn'](
     s,
-    s.packsVisible && s.hasRenting
-      ? 'VW business customer type selected (packs revealed)'
-      : 'VW business switch not confirmed — packs not revealed',
+    s.hasRenting
+      ? 'VW business customer type selected (renting families present)'
+      : 'VW business switch not confirmed — FinancialRenting absent',
   );
   await page.waitForTimeout(800);
 
@@ -439,6 +444,10 @@ async function selectBusinessRenting(page, logger) {
         await page.waitForTimeout(1000);
         continue;
       }
+      // The cookie-consent overlay can re-inject between clicks; strip it again so
+      // it can't intercept the card click (the root cause of the old "card never
+      // selects" symptom).
+      await page.evaluate(() => document.getElementById('privacy-shadow')?.remove()).catch(() => {});
       await page.mouse.click(box.x, box.y).catch(() => {});
       await page.waitForTimeout(2000);
       checked = await isChecked();
@@ -740,6 +749,16 @@ export async function mintFromConfigurator(
   await finalPage.bringToFront().catch(() => {});
   await finalPage.waitForTimeout(2000);
   if (!/\/Base\/Oops/i.test(finalUrl)) {
+    // CRITICAL: the finance form (formsccf) renders its OWN cookie-consent overlay
+    // (`#privacy-shadow`), separate from the configurator's. Until it is dismissed
+    // it sits on top of the form and intercepts EVERY real click — the
+    // "Professionelen" customer-type toggle and the product cards included — so the
+    // business switch silently no-ops, no card is selected, and FinanceApi/Calculate
+    // never fires (which previously looked like a reCAPTCHA/render wall but was just
+    // this overlay). Accepting cookies on the configurator page does NOT cover this
+    // separate page, so we must dismiss it here before driving the selection.
+    await acceptCookies(finalPage, logger);
+    await finalPage.waitForTimeout(1500);
     await selectBusinessRenting(finalPage, logger).catch((err) =>
       logger.warn({ model: model.id, err: err.message }, 'VW product selection error'),
     );
