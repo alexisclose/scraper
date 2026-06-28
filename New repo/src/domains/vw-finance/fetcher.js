@@ -33,7 +33,7 @@ import { JsonCache } from '../../libraries/io/json-cache.js';
 import { parseEur } from '../../libraries/currency/parse.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const brandConfig = brandConfigs.vw;
+const brandConfig = brandConfigs['vw-finance'];
 
 const HTML_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
