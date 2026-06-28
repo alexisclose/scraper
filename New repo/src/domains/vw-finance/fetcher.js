@@ -365,7 +365,13 @@ async function selectBusinessRenting(page, logger) {
   // warnings even when the switch had actually worked. Mirrors the Audi helper.)
   let s = await state();
   for (let attempt = 1; attempt <= 12 && !(s.enterpriseChecked && s.hasRenting); attempt += 1) {
-    if (s.hasEnterprise) await clickEnterprise();
+    if (s.hasEnterprise) {
+      // Strip the cookie-consent overlay first: it can re-inject and intercept the
+      // toggle click just as it does the card click, leaving the business switch
+      // unconfirmed. Mirrors the defensive removal in the card-selection loop.
+      await page.evaluate(() => document.getElementById('privacy-shadow')?.remove()).catch(() => {});
+      await clickEnterprise();
+    }
     await page.waitForTimeout(1200);
     s = await state();
   }

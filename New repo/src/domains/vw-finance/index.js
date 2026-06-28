@@ -61,6 +61,11 @@ async function run({ logger, runId, browserConcurrency }) {
   const offers = [];
   const skipped = [];
   const lastReason = new Map(); // model id → last failure reason (for the summary)
+  // model id → price-only offer (vehicle price parsed but no monthly). Held back
+  // so the model still counts as a straggler and the zero-contention cleanup pass
+  // can retry for a real monthly; only flushed into `offers` if every retry stays
+  // price-only. (Mirrors the Audi flow.)
+  const fallbackOffers = new Map();
 
   if (!models.length) {
     logger.warn('VW discovered 0 configurator models — nothing to scrape');
@@ -194,21 +199,23 @@ async function run({ logger, runId, browserConcurrency }) {
       try {
         const offer = await scrapeModel(lane.context, model);
         lane.noteDone();
-        if (offer) {
-          // A parsed offer IS the success case — even price-only. VW's monthly is
-          // reCAPTCHA-gated and effectively never returns for automation, so
-          // retrying a price-only result (as the Audi flow does, where the gate
-          // occasionally lifts) would just multiply browser work for a monthly
-          // that won't come. We keep the vehicle price + model and move on; only
-          // a genuine no-offer/crash is retried.
+        if (offer && offer.financialRenting.monthlyNet != null) {
           offers.push(offer);
           succeeded.add(model.id);
-          if (offer.financialRenting.monthlyNet == null) {
-            lastReason.set(model.id, 'VW_PRICE_ONLY (monthly reCAPTCHA-gated)');
-          }
           return true;
         }
-        lastReason.set(model.id, 'VW_OOPS_OR_PARSE'); // null = Oops / parse fail
+        if (offer) {
+          // Vehicle price parsed but no monthly — the business switch or product
+          // card didn't fire Calculate (usually a slow render under parallel
+          // contention now that the cookie overlay is dismissed, not a hard
+          // block). Hold it back as a fallback but DON'T mark succeeded, so the
+          // serial cleanup pass retries for a real monthly under zero contention,
+          // where the flaky steps almost always pass.
+          fallbackOffers.set(model.id, offer);
+          lastReason.set(model.id, 'VW_NO_FINANCE_CALC');
+        } else {
+          lastReason.set(model.id, 'VW_OOPS_OR_PARSE'); // null = Oops / parse fail
+        }
       } catch (err) {
         const reason = err.message || 'VW_CONFIGURATOR_FAILED';
         lastReason.set(model.id, reason);
@@ -272,7 +279,15 @@ async function run({ logger, runId, browserConcurrency }) {
   // those that never produced any offer at all (Oops / parse fail / crash).
   for (const m of models) {
     if (succeeded.has(m.id)) continue;
-    skipped.push({ input: m.id, reason: lastReason.get(m.id) || 'unknown' });
+    const fallback = fallbackOffers.get(m.id);
+    if (fallback) {
+      // Never drop the car entirely: keep the price-only record and flag the
+      // partial in the summary.
+      offers.push(fallback);
+      skipped.push({ input: m.id, reason: 'VW_NO_FINANCE_CALC (vehicle price only)' });
+    } else {
+      skipped.push({ input: m.id, reason: lastReason.get(m.id) || 'unknown' });
+    }
   }
 
   // Several trims can resolve to the same car (e.g. two business packs on one
