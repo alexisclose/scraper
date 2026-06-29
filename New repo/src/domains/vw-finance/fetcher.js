@@ -720,7 +720,7 @@ export async function mintFromConfigurator(
 
   logger.info({ model: model.id, url: model.configuratorUrl }, 'VW opening configurator');
   await page.goto(model.configuratorUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(2000);
 
   const title = await page.title().catch(() => '');
   if (/not available|wartungsarbeiten|maintenance/i.test(title)) {
@@ -730,7 +730,7 @@ export async function mintFromConfigurator(
   }
 
   await acceptCookies(page, logger);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 
   // Wait for the finance CTA to render.
   const berekenCta = page
