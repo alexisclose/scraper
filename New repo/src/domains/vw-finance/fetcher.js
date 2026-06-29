@@ -386,7 +386,7 @@ async function selectBusinessRenting(page, logger) {
   // read — multiple desktop/mobile copies — and produced false "not revealed"
   // warnings even when the switch had actually worked. Mirrors the Audi helper.)
   let s = await state();
-  for (let attempt = 1; attempt <= 12 && !(s.enterpriseChecked && s.hasRenting); attempt += 1) {
+  for (let attempt = 1; attempt <= 24 && !(s.enterpriseChecked && s.hasRenting); attempt += 1) {
     if (s.hasEnterprise) {
       // Strip the cookie-consent overlay first: it can re-inject and intercept the
       // toggle click just as it does the card click, leaving the business switch
@@ -394,7 +394,7 @@ async function selectBusinessRenting(page, logger) {
       await page.evaluate(() => document.getElementById('privacy-shadow')?.remove()).catch(() => {});
       await clickEnterprise();
     }
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(600);
     s = await state();
   }
   logger[s.hasRenting ? 'debug' : 'warn'](
@@ -423,8 +423,8 @@ async function selectBusinessRenting(page, logger) {
       .catch(() => null);
 
   let familyId = await findFamily();
-  for (let i = 0; i < 5 && !familyId; i += 1) {
-    await page.waitForTimeout(1000);
+  for (let i = 0; i < 10 && !familyId; i += 1) {
+    await page.waitForTimeout(500);
     familyId = await findFamily();
   }
 
@@ -446,7 +446,7 @@ async function selectBusinessRenting(page, logger) {
     // lands on the bullet-list body, which doesn't select the product. Poll for
     // the sized card (it renders after the packs reveal + family reload).
     checked = await isChecked();
-    for (let attempt = 0; attempt < 8 && !checked; attempt += 1) {
+    for (let attempt = 0; attempt < 12 && !checked; attempt += 1) {
       const box = await page
         .evaluate((fid) => {
           for (const r of document.querySelectorAll('input[name="financial-pack"]')) {
@@ -469,7 +469,7 @@ async function selectBusinessRenting(page, logger) {
         }, familyId)
         .catch(() => null);
       if (!box) {
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(500);
         continue;
       }
       // The cookie-consent overlay can re-inject between clicks; strip it again so
@@ -484,7 +484,7 @@ async function selectBusinessRenting(page, logger) {
   } else {
     logger.warn('VW Financiële Renting radio not found — staying on default product');
   }
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(2000);
   return checked;
 }
 
@@ -528,8 +528,8 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
 
   const ready = (x) => x.downId && (x.netPriceRaw || parseEur(x.defaultNet));
   let info = await probe();
-  for (let i = 0; i < 15 && !ready(info); i += 1) {
-    await page.waitForTimeout(1000);
+  for (let i = 0; i < 30 && !ready(info); i += 1) {
+    await page.waitForTimeout(500);
     info = await probe();
   }
 
@@ -583,8 +583,8 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
       }
     }
     let verified = false;
-    for (let i = 0; i < 12 && !verified; i += 1) {
-      await page.waitForTimeout(1000);
+    for (let i = 0; i < 24 && !verified; i += 1) {
+      await page.waitForTimeout(500);
       verified = recalcLanded(since);
     }
     if (verified) {
@@ -720,7 +720,7 @@ export async function mintFromConfigurator(
 
   logger.info({ model: model.id, url: model.configuratorUrl }, 'VW opening configurator');
   await page.goto(model.configuratorUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(2000);
 
   const title = await page.title().catch(() => '');
   if (/not available|wartungsarbeiten|maintenance/i.test(title)) {
@@ -730,7 +730,7 @@ export async function mintFromConfigurator(
   }
 
   await acceptCookies(page, logger);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 
   // Wait for the finance CTA to render.
   const berekenCta = page
@@ -749,7 +749,7 @@ export async function mintFromConfigurator(
       { model: model.id, clickAttempt },
       clicked ? 'VW clicked Bereken mijn maandprijs' : 'VW Bereken button not clickable',
     );
-    for (let i = 0; i < 35 && !landed; i += 1) await page.waitForTimeout(1000);
+    for (let i = 0; i < 70 && !landed; i += 1) await page.waitForTimeout(500);
     if (!landed && clickAttempt < 3) {
       logger.warn({ model: model.id, clickAttempt }, 'VW no formsccf yet — re-clicking CTA');
     }
