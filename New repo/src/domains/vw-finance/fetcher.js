@@ -35,6 +35,18 @@ import { parseEur } from '../../libraries/currency/parse.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const brandConfig = brandConfigs['vw-finance'];
 
+// Fail fast (and loudly) if the wrong/incomplete brand config is wired in. The
+// configurator endpoints live in vw-finance.json, NOT vw.json — pointing at the
+// latter silently builds `undefined?tenant=undefined...` URLs and resolves 0
+// models. Validating here turns that silent failure into a clear startup error.
+for (const key of ['catalogueModels', 'tenant', 'configurator', 'modelsPage', 'ccfFormulaStep']) {
+  if (!brandConfig?.endpoints?.[key]) {
+    throw new Error(
+      `VW Finance config missing endpoints.${key} — fetcher must use brandConfigs['vw-finance']`,
+    );
+  }
+}
+
 const HTML_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'nl-BE,nl;q=0.9',
@@ -158,37 +170,47 @@ export async function discoverConfiguratorModels({ logger }) {
     bypass: config.vw.noCache,
     ttlMs: 24 * 60 * 60 * 1000, // 1 day
   });
-  return cache.wrap('configurator-models', async () => {
-    let trims = [];
-    try {
-      const res = await httpFetch(brandConfig.endpoints.modelsPage, { headers: HTML_HEADERS });
-      trims = parseTrimsFromModelsPage(await res.text());
-      logger.info({ trims: trims.length }, 'VW best-deals trims discovered (live nav tree)');
-    } catch (err) {
-      logger.warn({ err: err.message }, 'VW live trim discovery failed — using committed list');
-    }
-    if (!trims.length) {
-      trims = STATIC_TRIMS;
-      logger.info({ trims: trims.length }, 'VW using committed trim list');
-    }
+  // Serve a non-empty cached result; a cached EMPTY list is treated as a miss so a
+  // past transient failure can't pin discovery at 0 for the whole TTL.
+  const cached = cache.get('configurator-models');
+  if (cached && cached.length) return cached;
 
-    const models = [];
-    for (const trim of trims) {
-      const resolved = await resolveModelId(trim, { logger });
-      if (!resolved) continue;
-      const model = { ...trim, ...resolved };
-      model.displayName =
-        resolved.longName || `Volkswagen ${trim.name}`.replace(/\s+/g, ' ').trim();
-      model.range = resolved.carlineName || null;
-      model.configuratorUrl = buildConfiguratorUrl(model);
-      models.push(model);
-    }
-    logger.info(
-      { resolved: models.length, fromTrims: trims.length },
-      'VW configurator models resolved',
+  let trims = [];
+  try {
+    const res = await httpFetch(brandConfig.endpoints.modelsPage, { headers: HTML_HEADERS });
+    trims = parseTrimsFromModelsPage(await res.text());
+    logger.info({ trims: trims.length }, 'VW best-deals trims discovered (live nav tree)');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'VW live trim discovery failed — using committed list');
+  }
+  if (!trims.length) {
+    trims = STATIC_TRIMS;
+    logger.info({ trims: trims.length }, 'VW using committed trim list');
+  }
+
+  const models = [];
+  for (const trim of trims) {
+    const resolved = await resolveModelId(trim, { logger });
+    if (!resolved) continue;
+    const model = { ...trim, ...resolved };
+    model.displayName = resolved.longName || `Volkswagen ${trim.name}`.replace(/\s+/g, ' ').trim();
+    model.range = resolved.carlineName || null;
+    model.configuratorUrl = buildConfiguratorUrl(model);
+    models.push(model);
+  }
+  logger.info({ resolved: models.length, fromTrims: trims.length }, 'VW configurator models resolved');
+
+  // Never cache an empty list: caching 0 would silently starve every run for the
+  // next 24h (the exact trap behind the original "discovers 0 models" report).
+  if (models.length) {
+    cache.set('configurator-models', models);
+  } else {
+    logger.warn(
+      { fromTrims: trims.length },
+      'VW resolved 0 configurator models — NOT caching the empty result. Check oneapi reachability and x-api-key (VW_ONEAPI_KEY).',
     );
-    return models;
-  });
+  }
+  return models;
 }
 
 // ---------------------------------------------------------------------------
