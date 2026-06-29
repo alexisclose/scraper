@@ -29,14 +29,19 @@ export function killChromeByProfileDir(profileDir) {
     const done = () => resolve();
     try {
       if (process.platform === 'win32') {
-        // Match chrome.exe processes whose command line contains this exact
-        // profile dir, then kill each. CommandLine matching is the only reliable
-        // way to target just our spawned instance (not the user's own Chrome).
+        // Match the MAIN chrome.exe whose command line carries this exact profile
+        // dir (CommandLine matching is the only reliable way to target just our
+        // spawned instance, not the user's own Chrome), then TREE-kill it with
+        // taskkill /T. Only the main process carries --user-data-dir; its
+        // renderer/GPU/utility children do not, so a parent-only Stop-Process
+        // leaves them behind. Across a long sweep those orphans pile up (a 45-model
+        // run reached ~138 chrome.exe), starving later models. /T takes the whole
+        // tree; /F forces it.
         const safe = profileDir.replace(/'/g, "''");
         const ps =
           `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | ` +
           `Where-Object { $_.CommandLine -like '*${safe}*' } | ` +
-          `ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
+          `ForEach-Object { & taskkill.exe /PID $_.ProcessId /T /F 2>$null }`;
         execFile(
           'powershell.exe',
           ['-NoProfile', '-NonInteractive', '-Command', ps],

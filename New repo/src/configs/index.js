@@ -37,6 +37,7 @@ function buildConfig() {
       headful: bool(env.VW_HEADFUL) ?? false,
       concurrency: env.VW_CONCURRENCY,
       oneapiKey: env.VW_ONEAPI_KEY || undefined,
+      limit: env.VW_LIMIT,
     },
     audi: {
       noCache: bool(env.AUDI_NO_CACHE) ?? false,
