@@ -55,7 +55,14 @@ function buildOfferOrSkip({
 }
 
 async function run({ logger, runId, browserConcurrency }) {
-  const models = await discoverConfiguratorModels({ logger });
+  let models = await discoverConfiguratorModels({ logger });
+  // VW_LIMIT (config.vw.limit): scrape only the first N models — a diagnostic
+  // knob for fast iteration (a 5-model run surfaces issues in ~5 min instead of
+  // the full ~45-model sweep). 0 = all.
+  if (config.vw.limit > 0 && models.length > config.vw.limit) {
+    logger.info({ limit: config.vw.limit, of: models.length }, 'VW_LIMIT active — scraping a subset');
+    models = models.slice(0, config.vw.limit);
+  }
   logger.info({ models: models.length }, 'VW configurator models loaded');
 
   const offers = [];

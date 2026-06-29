@@ -44,6 +44,9 @@ export const configSchema = z.object({
     // modelId (E-code). It's the public key the configurator JS itself sends;
     // override via VW_ONEAPI_KEY if VW rotates it.
     oneapiKey: z.string().default('Ox5AegtsLDecFmKHxYdf599VKBCpHsX4'),
+    // VW_LIMIT: cap the number of models scraped (0 = all). Diagnostic knob for
+    // fast iteration — scrape the first N discovered models instead of all ~45.
+    limit: intFromEnv(0),
   }),
 
   audi: z.object({
