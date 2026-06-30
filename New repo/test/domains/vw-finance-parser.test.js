@@ -138,6 +138,69 @@ describe('parseVwOffer', () => {
     expect(offer.financialRenting.downPaymentNet).toBeCloseTo(8000);
   });
 
+  it('leaves renting figures null when down payment was required but not confirmed', () => {
+    // A default (~25%) Calculate was captured, but the 20% recalc never confirmed.
+    // The strict gate must NOT emit that default-state monthly as the offer.
+    const financeApi = [
+      {
+        url: 'https://formsccf.volkswagen.be/ccf/FinanceApi/Calculate?lg=nl',
+        method: 'POST',
+        status: 200,
+        json: { PriceVatExcluded: '600,00', PriceVatIncluded: '726,00', Success: true },
+        requestBody: { bounds: [{ componentId: 1, value: '8797' }] },
+      },
+    ];
+    const offer = parseVwOffer({
+      html: LIVE_PRICE_ONLY,
+      url: 'https://formsccf.volkswagen.be/ccf/nl/finance/formulastep?code=VDCN9X6X',
+      code: 'VDCN9X6X',
+      brandConfig,
+      scrapedAt,
+      financeApi,
+      requireConfirmedDown: true,
+      downVerified: false,
+    });
+    expect(() => validateOffer(offer)).not.toThrow();
+    expect(offer.financialRenting.monthlyNet).toBeNull();
+    expect(offer.financialRenting.vehiclePriceNet).toBeCloseTo(35190.09); // price-only kept
+  });
+
+  it('picks the confirmed-down Calculate (downAmount) over the default-down one', () => {
+    // Two Calculates captured: the 20% one FIRST, the default 25% one LAST.
+    // Without downAmount the parser would take the last (25%); with downAmount it
+    // must select the 20% calc so monthly/term/down all belong to one state.
+    const financeApi = [
+      {
+        url: 'https://formsccf.volkswagen.be/ccf/FinanceApi/Calculate?lg=nl',
+        method: 'POST',
+        status: 200,
+        json: { PriceVatExcluded: '528,36', PriceVatIncluded: '630,84', Success: true },
+        requestBody: { bounds: [{ componentId: 1, value: '7038' }] },
+      },
+      {
+        url: 'https://formsccf.volkswagen.be/ccf/FinanceApi/Calculate?lg=nl',
+        method: 'POST',
+        status: 200,
+        json: { PriceVatExcluded: '600,00', PriceVatIncluded: '726,00', Success: true },
+        requestBody: { bounds: [{ componentId: 1, value: '8797' }] },
+      },
+    ];
+    const offer = parseVwOffer({
+      html: LIVE_PRICE_ONLY,
+      url: 'https://formsccf.volkswagen.be/ccf/nl/finance/formulastep?code=VDCN9X6X',
+      code: 'VDCN9X6X',
+      brandConfig,
+      scrapedAt,
+      financeApi,
+      boundMeanings: { 1: 'down' },
+      requireConfirmedDown: true,
+      downVerified: true,
+      downAmount: 7038,
+    });
+    expect(offer.financialRenting.monthlyNet).toBeCloseTo(528.36);
+    expect(offer.financialRenting.downPaymentNet).toBeCloseTo(7038);
+  });
+
   it('throws VW_OOPS on the error page so the caller can skip', () => {
     expect(() =>
       parseVwOffer({

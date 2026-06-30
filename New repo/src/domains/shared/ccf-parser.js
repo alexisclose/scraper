@@ -181,13 +181,28 @@ export function mapBounds(bounds, meanings = {}) {
 //     request  → { FamilyId, Code, bounds:[down, term, mileage], Token }
 //   The monthly comes from the response; term/mileage/down from the *request*
 //   body the fetcher captures alongside it.
-export function extractFromFinanceApi(responses, { logger, boundMeanings } = {}) {
+export function extractFromFinanceApi(responses, { logger, boundMeanings, downAmount } = {}) {
   const log = logger || { debug() {}, info() {} };
   const list = responses || [];
 
-  const calc = [...list]
+  // Successful Calculate responses, most-recent first.
+  const successful = [...list]
     .reverse()
-    .find((r) => /FinanceApi\/Calculate/i.test(r.url || '') && r.json && r.json.Success);
+    .filter((r) => /FinanceApi\/Calculate/i.test(r.url || '') && r.json && r.json.Success);
+  // When a target down payment is known, prefer the MOST RECENT Calculate whose
+  // request bounds actually carry that amount — so monthly/term/mileage/residual
+  // all come from the SAME confirmed-down calculation, never the default-down one
+  // that fires automatically when the product card is first selected. Tolerance
+  // mirrors the fetcher's own recalc check (€1), widened slightly for rounding.
+  const matchesDown = (r) => {
+    if (downAmount == null || !Array.isArray(r.requestBody?.bounds)) return false;
+    const tol = Math.max(2, Math.abs(downAmount) * 0.01);
+    return r.requestBody.bounds.some((b) => {
+      const v = parseEur(b && b.value);
+      return v != null && Math.abs(v - downAmount) <= tol;
+    });
+  };
+  const calc = (downAmount != null && successful.find(matchesDown)) || successful[0] || null;
   if (calc) {
     const net = parseEur(calc.json.PriceVatExcluded);
     const gross = parseEur(calc.json.PriceVatIncluded);
