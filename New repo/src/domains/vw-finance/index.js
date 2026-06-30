@@ -62,6 +62,18 @@ function buildOfferOrSkip({
 
 async function run({ logger, runId, browserConcurrency }) {
   let models = await discoverConfiguratorModels({ logger });
+  // VW_MODELS (config.vw.models): keep only models whose id contains one of the
+  // comma-separated substrings — a diagnostic knob to target specific families
+  // (e.g. "id-4,id-5,passat") without scraping the whole set.
+  if (config.vw.models) {
+    const wanted = config.vw.models
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const before = models.length;
+    models = models.filter((m) => wanted.some((w) => String(m.id).toLowerCase().includes(w)));
+    logger.info({ filter: wanted, kept: models.length, of: before }, 'VW_MODELS filter active');
+  }
   // VW_LIMIT (config.vw.limit): scrape only the first N models — a diagnostic
   // knob for fast iteration (a 5-model run surfaces issues in ~5 min instead of
   // the full ~45-model sweep). 0 = all.
@@ -198,10 +210,15 @@ async function run({ logger, runId, browserConcurrency }) {
     };
     const close = async () => {
       await handle?.cleanup().catch(() => {});
-      await handle?.context
-        ?.browser()
-        ?.close()
-        .catch(() => {});
+      // browser().close() can itself hang on a wedged CDP connection — the exact
+      // situation the per-model deadline exists to recover from. Cap it so close()
+      // (and therefore relaunch) can never block, then always fall through to the
+      // OS-level kill below.
+      const browserClose = handle?.context?.browser()?.close?.() ?? Promise.resolve();
+      await Promise.race([
+        Promise.resolve(browserClose).catch(() => {}),
+        new Promise((r) => setTimeout(r, 8000)),
+      ]);
       handle = null;
       // browser().close() only disconnects CDP; the detached spawn-cdp Chrome
       // keeps running. Kill it for real so a 45-model sweep with recycles doesn't
@@ -234,6 +251,28 @@ async function run({ logger, runId, browserConcurrency }) {
 
   const succeeded = new Set();
 
+  // Hard per-model deadline. A wedged page/CDP makes the un-timed page.evaluate
+  // calls in the down-payment probe/fill block FOREVER — one stuck model would
+  // otherwise freeze the entire sweep (observed: a ~2-hour hang on a Passat trim).
+  // On deadline we abort the model and recycle the browser so the run keeps moving.
+  // 5 min comfortably exceeds a legitimate slow model (~3-4 min worst case with
+  // internal retries) while still catching a true hang quickly.
+  const MODEL_DEADLINE_MS = 5 * 60 * 1000;
+  const withDeadline = (promise, ms) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`VW_MODEL_TIMEOUT after ${ms}ms`)), ms);
+      promise.then(
+        (v) => {
+          clearTimeout(timer);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(timer);
+          reject(e);
+        },
+      );
+    });
+
   // Run one model on a lane with up to `maxAttempts`, recycling on crash.
   // Returns true on success. Records the failure reason for the summary.
   const runModel = async (lane, model, maxAttempts) => {
@@ -243,7 +282,7 @@ async function run({ logger, runId, browserConcurrency }) {
     }
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
-        const offer = await scrapeModel(lane.context, model);
+        const offer = await withDeadline(scrapeModel(lane.context, model), MODEL_DEADLINE_MS);
         lane.noteDone();
         if (offer && offer.financialRenting.monthlyNet != null) {
           offers.push(offer);
@@ -265,7 +304,11 @@ async function run({ logger, runId, browserConcurrency }) {
       } catch (err) {
         const reason = err.message || 'VW_CONFIGURATOR_FAILED';
         lastReason.set(model.id, reason);
-        if (/closed|crash|disconnect|Target (?:page|closed)|browser has been/i.test(reason)) {
+        if (
+          /closed|crash|disconnect|Target (?:page|closed)|browser has been|VW_MODEL_TIMEOUT/i.test(
+            reason,
+          )
+        ) {
           if (!(await lane.relaunch())) {
             lastReason.set(model.id, 'BROWSER_RELAUNCH_FAILED');
             return false;
