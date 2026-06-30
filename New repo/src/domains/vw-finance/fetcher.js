@@ -23,7 +23,7 @@
 //
 //   3. fetchByCode — direct-HTTP fast path for an already-minted CCF code
 //      (price-only; codes expire then 302 to Base/Oops).
-/* global document, getComputedStyle, Event */
+/* global document, getComputedStyle */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -718,7 +718,7 @@ async function captureFailureDebug(page, model, extra, logger) {
         }));
         return {
           title: document.title,
-          url: location.href,
+          url: document.location.href,
           enterpriseChecked: !!document.querySelector('#enterprise')?.checked,
           privateChecked: !!document.querySelector('#private')?.checked,
           radios,
