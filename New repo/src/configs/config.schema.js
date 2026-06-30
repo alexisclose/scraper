@@ -47,6 +47,9 @@ export const configSchema = z.object({
     // VW_LIMIT: cap the number of models scraped (0 = all). Diagnostic knob for
     // fast iteration — scrape the first N discovered models instead of all ~45.
     limit: intFromEnv(0),
+    // VW_MODELS: comma-separated id substrings to scrape only matching models
+    // (e.g. "id-4,id-5,passat"). Diagnostic knob to target specific families.
+    models: z.string().optional(),
   }),
 
   audi: z.object({
