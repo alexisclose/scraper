@@ -32,6 +32,9 @@ function buildOfferOrSkip({
   logger,
   financeApi,
   boundMeanings,
+  downVerified,
+  downAmount,
+  requireConfirmedDown,
 }) {
   const label = code || model?.id || '(unknown)';
   try {
@@ -45,6 +48,9 @@ function buildOfferOrSkip({
       logger,
       financeApi,
       boundMeanings,
+      downVerified,
+      downAmount,
+      requireConfirmedDown,
     });
     return validateOffer(offer);
   } catch (err) {
@@ -93,12 +99,21 @@ async function run({ logger, runId, browserConcurrency }) {
   // concurrently (lanes A/B) without colliding on a debugging port.
   const basePort = config.tesla.cdpPort + 400;
 
+  const downPaymentPct = brandConfig.defaults?.firstPaymentPct ?? 0;
+  const requireConfirmedDown = downPaymentPct > 0;
+
   const scrapeModel = async (context, model) => {
-    const { finalUrl, code, redirectedToOops, html, financeApi, boundMeanings, recaptchaBlocked } =
-      await mintFromConfigurator(context, model, {
-        logger,
-        downPaymentPct: brandConfig.defaults?.firstPaymentPct ?? 0,
-      });
+    const {
+      finalUrl,
+      code,
+      redirectedToOops,
+      html,
+      financeApi,
+      boundMeanings,
+      recaptchaBlocked,
+      downVerified,
+      downAmount,
+    } = await mintFromConfigurator(context, model, { logger, downPaymentPct });
     if (redirectedToOops) {
       logger.warn(
         { input: model.id, finalUrl, reason: 'VW_OOPS' },
@@ -120,7 +135,28 @@ async function run({ logger, runId, browserConcurrency }) {
           : r,
       );
       writeJson(dump, redacted);
-      logger.info({ input: model.id, responses: financeApi.length }, 'VW FinanceApi JSON captured');
+      // Per-model FinanceApi composition: how many GetComponentList vs Calculate
+      // fired, and the LAST successful Calculate's monthly / family / bounds — so a
+      // confirmed (20%-down) calc can be told apart from a default-down one at a
+      // glance, and "no Calculate" failures are distinguishable from "wrong calc".
+      const calcs = financeApi.filter((r) => /FinanceApi\/Calculate/i.test(r.url || ''));
+      const compLists = financeApi.filter((r) => /GetComponentList/i.test(r.url || ''));
+      const lastCalc = [...calcs].reverse().find((r) => r.json && r.json.Success);
+      logger.info(
+        {
+          input: model.id,
+          responses: financeApi.length,
+          calculateCalls: calcs.length,
+          componentListCalls: compLists.length,
+          downVerified,
+          lastMonthlyNet: lastCalc?.json?.PriceVatExcluded ?? null,
+          lastFamilyId: lastCalc?.requestBody?.FamilyId ?? null,
+          lastBounds: Array.isArray(lastCalc?.requestBody?.bounds)
+            ? lastCalc.requestBody.bounds.map((b) => b.value)
+            : null,
+        },
+        'VW FinanceApi JSON captured',
+      );
     } else {
       logger.warn(
         { input: model.id, recaptchaBlocked },
@@ -138,6 +174,9 @@ async function run({ logger, runId, browserConcurrency }) {
       logger,
       financeApi,
       boundMeanings,
+      downVerified,
+      downAmount,
+      requireConfirmedDown,
     });
   };
 
@@ -320,8 +359,28 @@ async function run({ logger, runId, browserConcurrency }) {
   }
   const unique = [...byKey.values()];
 
+  // ---- Final summary: coverage + failure reasons grouped by count ----
+  const withMonthly = unique.filter((o) => o.financialRenting.monthlyNet != null);
+  const priceOnly = unique.length - withMonthly.length;
+  // Group skip reasons by their leading CODE (drop parentheticals/details) so the
+  // tail of a long run shows WHY models failed, by frequency, not one line each.
+  const reasonGroups = {};
+  for (const s of skipped) {
+    const code = String(s.reason || 'unknown').split(/[\s(]/)[0] || 'unknown';
+    reasonGroups[code] = (reasonGroups[code] || 0) + 1;
+  }
+  const pct = (n, d) => (d > 0 ? `${Math.round((n / d) * 1000) / 10}%` : 'n/a');
   logger.info(
-    { scraped: offers.length, unique: unique.length, skipped: skipped.length, reasons: skipped },
+    {
+      resolvedModels: models.length,
+      attempted: models.length,
+      uniqueCars: unique.length,
+      fullMonthlyRows: withMonthly.length,
+      priceOnlyRows: priceOnly,
+      skipped: skipped.length,
+      reasonsByCount: reasonGroups,
+      monthlySuccessRate: pct(withMonthly.length, models.length),
+    },
     'VW scrape summary',
   );
   if (unique.length === 0) {

@@ -72,6 +72,15 @@ export function parseVwOffer({
   logger,
   financeApi,
   boundMeanings,
+  // Data-quality gate: when a down payment was requested (requireConfirmedDown),
+  // renting figures are trusted only if the form's recalc was actually confirmed
+  // at the target amount (downVerified). Otherwise the captured Calculate reflects
+  // the DEFAULT (~25%) down — a different state — and must NOT be emitted as the
+  // 20% offer. `downAmount` lets the extractor pick the matching Calculate.
+  // Defaults keep existing callers (and the Audi parser) behaving as before.
+  downVerified = false,
+  requireConfirmedDown = false,
+  downAmount = null,
 }) {
   const log = logger || { debug() {}, info() {}, warn() {} };
 
@@ -99,9 +108,24 @@ export function parseVwOffer({
   let residualValuePct = null;
   let figureSource = null;
 
+  // STRICT DOWN-PAYMENT GATE: if a down payment was requested but its recalc was
+  // never confirmed, the only Calculate we captured reflects the default (~25%)
+  // down — a different state — so we leave ALL renting figures null rather than
+  // emit a monthly that does not belong to the 20% offer. The row keeps its
+  // vehicle price (price-only) and the caller records VW_DOWN_NOT_CONFIRMED.
+  if (requireConfirmedDown && !downVerified) {
+    log.info(
+      { code, downVerified, reason: 'VW_DOWN_NOT_CONFIRMED' },
+      'VW down payment not confirmed at target — renting figures left null (no mixed-state monthly)',
+    );
+  }
+
   // Preferred source: the FinanceApi JSON captured by the browser fetcher. The
   // HTML calc block is the fallback for the rare case figures are server-rendered.
-  const apiFigures = extractFromFinanceApi(financeApi, { logger: log, boundMeanings });
+  const apiFigures =
+    requireConfirmedDown && !downVerified
+      ? null
+      : extractFromFinanceApi(financeApi, { logger: log, boundMeanings, downAmount });
 
   if (apiFigures) {
     figureSource = `finance-api:${apiFigures.source}`;
@@ -121,7 +145,7 @@ export function parseVwOffer({
       { code, source: apiFigures.source, term: termMonths, annualMileage, downNet: downPaymentNet },
       'VW renting figures sourced from FinanceApi JSON',
     );
-  } else if (calcReady) {
+  } else if (calcReady && !(requireConfirmedDown && !downVerified)) {
     figureSource = 'html-calc';
     const monthly = matchAmount(text, L.monthly);
     if (monthly.value != null) {

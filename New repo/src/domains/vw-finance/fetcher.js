@@ -23,8 +23,8 @@
 //
 //   3. fetchByCode — direct-HTTP fast path for an already-minted CCF code
 //      (price-only; codes expire then 302 to Base/Oops).
-/* global document, getComputedStyle */
-import { readFileSync } from 'node:fs';
+/* global document, getComputedStyle, Event */
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { httpFetch } from '../../libraries/http/fetch.js';
@@ -548,7 +548,6 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
   }
   const amount = Math.round(pct * netPrice * 100) / 100;
   const display = amount.toFixed(2).replace('.', ','); // Belgian decimal comma
-  const input = page.locator(`#${info.downId}`);
 
   const recalcLanded = (since) =>
     financeApi
@@ -562,19 +561,64 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
           r.requestBody.bounds.some((b) => Math.abs((parseEur(b.value) ?? -1e9) - amount) < 1),
       );
 
+  // Fill with progressively more forceful strategies, RE-DISCOVERING the input id
+  // on every attempt: the form can re-render and hand the down field a new
+  // component-bound id, so a locator captured once goes stale and fill() times out
+  // (the old "could not fill" / "down recalc not confirmed" failures). Returns the
+  // id used, or null if the field couldn't be found/filled.
+  const fillDown = async () => {
+    const cur = await probe();
+    const id = cur.downId || info.downId;
+    if (!id) return null;
+    // 1) Playwright fill (clears, types, fires input/change).
+    try {
+      const loc = page.locator(`#${id}`);
+      await loc.fill('', { timeout: 4000 });
+      await loc.fill(display, { timeout: 4000 });
+      await loc.press('Tab');
+      return id;
+    } catch {
+      /* try the next strategy */
+    }
+    // 2) Click + select-all + type (works when fill() is blocked by a mask/handler).
+    try {
+      const loc = page.locator(`#${id}`);
+      await loc.click({ timeout: 3000 });
+      await page.keyboard.press('Control+A');
+      await page.keyboard.type(display);
+      await page.keyboard.press('Tab');
+      return id;
+    } catch {
+      /* try the JS setter */
+    }
+    // 3) Native value setter + the events the widget's recalc listens for.
+    const ok = await page
+      .evaluate(
+        (args) => {
+          const el = document.getElementById(args.id);
+          if (!el) return false;
+          const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value')?.set;
+          if (setter) setter.call(el, args.value);
+          else el.value = args.value;
+          for (const t of ['input', 'change', 'blur'])
+            el.dispatchEvent(new Event(t, { bubbles: true }));
+          return true;
+        },
+        { id, value: display },
+      )
+      .catch(() => false);
+    return ok ? id : null;
+  };
+
   for (let fillTry = 1; fillTry <= 3; fillTry += 1) {
     const since = financeApi.length;
-    try {
-      await input.fill('');
-      await input.fill(display);
-      await input.press('Tab');
-    } catch (err) {
-      logger.warn(
-        { downId: info.downId, err: err.message, fillTry },
-        'VW could not fill down-payment input',
-      );
+    const usedId = await fillDown();
+    if (!usedId) {
+      logger.warn({ downId: info.downId, fillTry }, 'VW could not fill down-payment input');
+      await page.waitForTimeout(800);
       continue;
     }
+    info.downId = usedId;
     for (const rx of [/bereken uw maandelijkse betaling/i, /herbereken/i, /\bbereken\b/i]) {
       const b = page.getByText(rx).first();
       if (await b.count().catch(() => 0)) {
@@ -644,6 +688,54 @@ async function readBoundMeanings(page) {
       return map;
     })
     .catch(() => ({}));
+}
+
+// Best-effort, NON-throwing diagnostics for a model that reached the finance form
+// but did not produce a confirmed monthly. Writes a small JSON snapshot (and a
+// screenshot when possible) to data/cache/vw-finance/debug/ so failures can be
+// triaged without a re-run. Captures only on-page state — no cookies/tokens.
+async function captureFailureDebug(page, model, extra, logger) {
+  try {
+    const dir = join(config.paths.dataDir, 'cache', 'vw-finance', 'debug');
+    mkdirSync(dir, { recursive: true });
+    const safe = String(model.id).replace(/[^a-z0-9_-]+/gi, '_');
+    const snap = await page
+      .evaluate(() => {
+        const radios = [...document.querySelectorAll('input[name="financial-pack"]')].map((r) => {
+          const id = r.getAttribute('data-familyid') || r.value;
+          const ft = document.querySelector('#financing-type-' + id);
+          const card = r.closest('.card--pack');
+          const label = ((card && card.innerText) || '').replace(/\s+/g, ' ').trim().slice(0, 70);
+          return { id, financingType: ft ? ft.value : null, checked: r.checked, label };
+        });
+        const bounds = [...document.querySelectorAll('input[id^="component-bound-"]')].map((el) => ({
+          id: el.id,
+          value: el.value,
+          near: ((el.closest('label') || el.parentElement || {}).innerText || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 50),
+        }));
+        return {
+          title: document.title,
+          url: location.href,
+          enterpriseChecked: !!document.querySelector('#enterprise')?.checked,
+          privateChecked: !!document.querySelector('#private')?.checked,
+          radios,
+          bounds,
+          textExcerpt: (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 700),
+        };
+      })
+      .catch(() => null);
+    writeFileSync(
+      join(dir, `${safe}.json`),
+      JSON.stringify({ model: model.id, capturedAt: new Date().toISOString(), ...extra, ...(snap || {}) }, null, 2),
+    );
+    await page.screenshot({ path: join(dir, `${safe}.png`) }).catch(() => {});
+    logger.info({ model: model.id, dir, reason: extra?.reason }, 'VW failure diagnostics saved');
+  } catch (err) {
+    logger.debug({ model: model.id, err: err.message }, 'VW failure diagnostics capture failed');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -770,6 +862,7 @@ export async function mintFromConfigurator(
 
   let boundMeanings = {};
   let downVerified = false;
+  let downAmount = null;
   await finalPage.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
   // The form often opens in a popup/background tab; bring it to front so it lays
   // out and is interactable before we dismiss its cookie overlay and drive the
@@ -800,10 +893,23 @@ export async function mintFromConfigurator(
         },
       );
       downVerified = !!set?.verified;
+      downAmount = set?.amount ?? null;
     }
 
     boundMeanings = await readBoundMeanings(finalPage);
     logger.info({ model: model.id, boundMeanings, downVerified }, 'VW bound-component meanings');
+
+    // Diagnostics for the failure case: reached the form but the 20% recalc never
+    // confirmed, so the parser will leave the monthly null. Snapshot the form so
+    // the cause (no renting card / stale down field / etc.) is triageable.
+    if (downPaymentPct > 0 && !downVerified) {
+      await captureFailureDebug(
+        finalPage,
+        model,
+        { reason: 'VW_DOWN_NOT_CONFIRMED', downVerified, downAmount },
+        logger,
+      );
+    }
   }
 
   // The finance app re-renders after landing, which can transiently tear down
@@ -830,6 +936,8 @@ export async function mintFromConfigurator(
     financeApi,
     boundMeanings,
     recaptchaBlocked,
+    downVerified,
+    downAmount,
     redirectedToOops: /\/Base\/Oops/i.test(finalUrl),
   };
 }
