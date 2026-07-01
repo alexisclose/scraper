@@ -348,8 +348,20 @@ async function run({ logger, runId, browserConcurrency }) {
   await Promise.all(Array.from({ length: CONCURRENCY }, (_, w) => worker(w)));
 
   // ---- Serial cleanup pass: retry stragglers under ZERO contention. ----
+  // Circuit breaker (speed): if NOT A SINGLE model produced a monthly in the
+  // parallel pass, the site is degraded/throttled right now (Oops on mint, dead
+  // toggle) — retrying every straggler would burn minutes per model for nothing.
+  // Skip the cleanup pass and record why, rather than 3x-retrying into a wall.
+  // (2 attempts here instead of 3 also caps the cost when cleanup does run.)
   const stragglers = models.filter((m) => !succeeded.has(m.id));
-  if (stragglers.length) {
+  const siteDegraded = succeeded.size === 0 && models.length >= 3;
+  if (stragglers.length && siteDegraded) {
+    logger.warn(
+      { stragglers: stragglers.length, of: models.length },
+      'VW cleanup pass SKIPPED — 0 models produced a monthly in the parallel pass ' +
+        '(site likely throttled/degraded); retrying would only waste time. Retry later or via a fresh IP/proxy.',
+    );
+  } else if (stragglers.length) {
     logger.info(
       { stragglers: stragglers.map((m) => m.id) },
       'VW cleanup pass for models that did not complete in parallel',
@@ -357,7 +369,7 @@ async function run({ logger, runId, browserConcurrency }) {
     const lane = createLane(CONCURRENCY); // its own port band
     try {
       for (const model of stragglers) {
-        await runModel(lane, model, 3);
+        await runModel(lane, model, 2);
       }
     } finally {
       await lane.close();
