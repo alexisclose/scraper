@@ -442,43 +442,57 @@ async function selectBusinessRenting(page, logger) {
         )
         .catch(() => false);
 
-    // Click the VISIBLE card's HEADER top — the tall VW card's geometric centre
-    // lands on the bullet-list body, which doesn't select the product. Poll for
-    // the sized card (it renders after the packs reveal + family reload).
+    // Click the VISIBLE card for this family. The radios are duplicated in the DOM
+    // (a hidden print copy shares the family id), and the tall card's geometric
+    // centre lands on the bullet body which doesn't select — so we pick the copy
+    // whose card has a real box and try SEVERAL click points (header top, header,
+    // its label, the card) until a radio for this family flips checked. On Passat
+    // the default "Verhuur op Lange Termijn" stayed selected because a single
+    // header-top click missed; multiple points fix that.
     checked = await isChecked();
     for (let attempt = 0; attempt < 12 && !checked; attempt += 1) {
-      const box = await page
+      const targets = await page
         .evaluate((fid) => {
+          let card = null;
           for (const r of document.querySelectorAll('input[name="financial-pack"]')) {
             const id = r.getAttribute('data-familyid') || r.value;
             if (String(id) !== String(fid)) continue;
-            const card = r.closest('.card--pack');
-            if (!card) continue;
-            const header =
-              card.querySelector('.card--pack__header__top') ||
-              card.querySelector('.card--pack__header') ||
-              card;
-            const rect = header.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-              header.scrollIntoView({ block: 'center' });
-              const r2 = header.getBoundingClientRect();
-              return { x: r2.x + r2.width / 2, y: r2.y + r2.height / 2 };
+            const c = r.closest('.card--pack');
+            const rect = c && c.getBoundingClientRect();
+            if (rect && rect.width > 0 && rect.height > 0) {
+              card = c;
+              break; // the visible copy (the print copy has a zero box)
             }
           }
-          return null;
+          if (!card) return null;
+          card.scrollIntoView({ block: 'center' });
+          const pts = [];
+          const push = (el) => {
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0)
+              pts.push({ x: r.x + r.width / 2, y: r.y + Math.min(24, r.height / 2) });
+          };
+          push(card.querySelector('.card--pack__header__top'));
+          push(card.querySelector('.card--pack__header'));
+          push(card.querySelector('label'));
+          push(card);
+          return pts;
         }, familyId)
         .catch(() => null);
-      if (!box) {
+      if (!targets || !targets.length) {
         await page.waitForTimeout(500);
         continue;
       }
-      // The cookie-consent overlay can re-inject between clicks; strip it again so
-      // it can't intercept the card click (the root cause of the old "card never
-      // selects" symptom).
+      // The cookie-consent overlay can re-inject between clicks; strip it so it
+      // can't intercept the card click.
       await page.evaluate(() => document.getElementById('privacy-shadow')?.remove()).catch(() => {});
-      await page.mouse.click(box.x, box.y).catch(() => {});
-      await page.waitForTimeout(2000);
-      checked = await isChecked();
+      for (const p of targets) {
+        await page.mouse.click(p.x, p.y).catch(() => {});
+        await page.waitForTimeout(1200);
+        checked = await isChecked();
+        if (checked) break;
+      }
     }
     logger.info({ familyId, checked }, 'VW selected Financiële Renting product');
   } else {
@@ -576,6 +590,7 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
       await loc.fill('', { timeout: 4000 });
       await loc.fill(display, { timeout: 4000 });
       await loc.press('Tab');
+      await loc.press('Enter').catch(() => {}); // some layouts recalc on Enter, not blur
       return id;
     } catch {
       /* try the next strategy */
@@ -587,6 +602,7 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
       await page.keyboard.press('Control+A');
       await page.keyboard.type(display);
       await page.keyboard.press('Tab');
+      await page.keyboard.press('Enter').catch(() => {});
       return id;
     } catch {
       /* try the JS setter */
