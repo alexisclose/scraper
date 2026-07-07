@@ -38,8 +38,14 @@ export const configSchema = z.object({
     // When true, drive the configurator with a visible browser (debugging the
     // cookie wall + "Bereken mijn maandprijs" click locally).
     headful: z.boolean().default(false),
-    // Number of browsers run in parallel across the trim sweep.
-    concurrency: intFromEnv(3),
+    // Number of browsers run in parallel across the trim sweep. Default 1: a
+    // single browser is the gentlest footprint on VW (slowest to trip the per-IP
+    // throttle that bounces mints to /Base/Oops) and avoids the browser-launcher
+    // exhaustion seen under parallel retry churn. Raise via VW_CONCURRENCY on a
+    // fresh IP / proxy where speed matters more than stealth.
+    concurrency: intFromEnv(1),
+    // Pause between models (ms) to keep the request rate gentle. VW_MODEL_DELAY_MS.
+    modelDelayMs: intFromEnv(2500),
     // oneapi.volkswagen.com x-api-key used to resolve each trim's default
     // modelId (E-code). It's the public key the configurator JS itself sends;
     // override via VW_ONEAPI_KEY if VW rotates it.

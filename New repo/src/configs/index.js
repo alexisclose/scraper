@@ -39,6 +39,7 @@ function buildConfig() {
       oneapiKey: env.VW_ONEAPI_KEY || undefined,
       limit: env.VW_LIMIT,
       models: env.VW_MODELS || undefined,
+      modelDelayMs: env.VW_MODEL_DELAY_MS,
     },
     audi: {
       noCache: bool(env.AUDI_NO_CACHE) ?? false,
