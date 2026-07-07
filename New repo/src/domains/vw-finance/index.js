@@ -330,6 +330,11 @@ async function run({ logger, runId, browserConcurrency }) {
     'VW scraping models via configurator (parallel)',
   );
 
+  // Gentle pace between models (keeps the per-IP request rate low so VW is slower
+  // to throttle). Configurable via VW_MODEL_DELAY_MS.
+  const modelDelayMs = config.vw.modelDelayMs ?? 0;
+  const pace = () => new Promise((r) => setTimeout(r, modelDelayMs));
+
   // ---- Parallel pool: each lane pulls from a shared queue ----
   let nextIndex = 0;
   const worker = async (laneId) => {
@@ -340,6 +345,7 @@ async function run({ logger, runId, browserConcurrency }) {
         nextIndex += 1;
         if (i >= models.length) break;
         await runModel(lane, models[i], 2);
+        if (modelDelayMs > 0) await pace();
       }
     } finally {
       await lane.close();
@@ -370,6 +376,7 @@ async function run({ logger, runId, browserConcurrency }) {
     try {
       for (const model of stragglers) {
         await runModel(lane, model, 2);
+        if (modelDelayMs > 0) await pace();
       }
     } finally {
       await lane.close();
