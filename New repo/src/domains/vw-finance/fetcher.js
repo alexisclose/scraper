@@ -200,14 +200,20 @@ export async function discoverConfiguratorModels({ logger }) {
   }
   logger.info({ resolved: models.length, fromTrims: trims.length }, 'VW configurator models resolved');
 
-  // Never cache an empty list: caching 0 would silently starve every run for the
-  // next 24h (the exact trap behind the original "discovers 0 models" report).
-  if (models.length) {
+  // Never cache an empty OR PARTIAL resolve. Caching 0 would silently starve
+  // every run for 24h (the trap behind the original "discovers 0 models" report),
+  // and a throttled oneapi window can resolve only a fraction of the trims —
+  // observed live: 18/45 cached, which would silently shrink every sweep for the
+  // rest of the day. Serve partial results for THIS run, but only persist a
+  // (near-)complete resolve; 90% allows a few genuinely-retired trims.
+  const complete = trims.length > 0 && models.length >= Math.ceil(trims.length * 0.9);
+  if (complete) {
     cache.set('configurator-models', models);
   } else {
     logger.warn(
-      { fromTrims: trims.length },
-      'VW resolved 0 configurator models — NOT caching the empty result. Check oneapi reachability and x-api-key (VW_ONEAPI_KEY).',
+      { resolved: models.length, fromTrims: trims.length },
+      'VW discovery incomplete — NOT caching (would pin a shrunken model list for 24h). ' +
+        'Check oneapi reachability / throttling / x-api-key (VW_ONEAPI_KEY).',
     );
   }
   return models;
