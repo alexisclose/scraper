@@ -106,7 +106,11 @@ async function run({ logger, runId, browserConcurrency }) {
   // while Audi's browser pool runs alongside in the other lane (see scrape.js).
   const cap = browserConcurrency ?? config.vw.concurrency;
   const CONCURRENCY = Math.max(1, Math.min(cap, models.length));
-  const RESTART_EVERY = 4;
+  // Recycle the browser every N models. Was 4 when each model loaded the full
+  // image/video-heavy SPA; with the network diet (fetcher blocks images/media/
+  // fonts + trackers) memory grows far slower, and fewer recycles also means
+  // fewer cold sessions presented to VW.
+  const RESTART_EVERY = 8;
   // Distinct port band from Audi's (cdpPort+10..) so VW and Audi can run
   // concurrently (lanes A/B) without colliding on a debugging port.
   const basePort = config.tesla.cdpPort + 400;
@@ -192,15 +196,25 @@ async function run({ logger, runId, browserConcurrency }) {
     });
   };
 
-  // A browser "lane": owns one Chrome (fresh port + ephemeral profile per launch)
-  // and recycles it every few models. Used by both the pool and the cleanup pass.
+  // A browser "lane": owns one Chrome and recycles it every few models. Used by
+  // both the pool and the cleanup pass.
+  //
+  // The profile is WARM AND PERSISTENT (stable dir per lane, reused across
+  // relaunches and across runs) rather than ephemeral: it keeps the ENSIGHTEN
+  // consent cookie (no cookie-overlay dance on every model), Google's reCAPTCHA
+  // cookie history (a returning browser scores better than a blank one, so fewer
+  // gated calcs), and a stable fingerprint instead of presenting VW with a
+  // brand-new suspicious session on every recycle. The old zombie-lock hazard —
+  // a leftover Chrome holding the profile and blocking the next launch — is
+  // neutralised by killChromeByProfileDir BEFORE every launch; the CDP port
+  // still rotates per relaunch so a half-dead listener can't shadow the new one.
   const createLane = (laneId) => {
     let seq = 0;
     let handle = null;
     let sinceRestart = 0;
-    let currentProfileDir = null;
-    const launch = () => {
-      currentProfileDir = join(config.paths.browserProfilesDir, `vwf-w${laneId}-${seq}`);
+    const currentProfileDir = join(config.paths.browserProfilesDir, `vwf-w${laneId}`);
+    const launch = async () => {
+      if (!config.vw.headful) await killChromeByProfileDir(currentProfileDir);
       return launchBrowser({
         strategy: config.vw.headful ? 'patchright' : 'spawn-cdp',
         port: basePort + laneId * 60 + (seq % 50),
