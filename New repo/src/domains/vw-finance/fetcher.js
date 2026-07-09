@@ -243,58 +243,6 @@ export async function fetchByCode(code) {
 }
 
 // ---------------------------------------------------------------------------
-// Network diet: block heavy assets + third-party beacons (speed AND stealth)
-// ---------------------------------------------------------------------------
-//
-// Each model load pulls the full www.volkswagen.be configurator SPA — megabytes
-// of car imagery, fonts and video plus a stack of third-party marketing/anti-bot
-// beacons (lighthouselabs "tam", vwonehub logger, criteo, facebook, taboola,
-// hotjar, linkedin) that the finance flow never needs. Blocking them cuts phase-1
-// wall time AND removes ~80-90% of the requests this IP fires per model, so VW's
-// rate/bot systems see a fraction of the traffic — the lever that keeps the tail
-// of a long sweep as healthy as its start.
-//
-// Conservative by design:
-//   • google.com / gstatic.com / recaptcha.net are ALWAYS allowed — milesFinance
-//     must mint a grecaptcha token or every Calculate dies.
-//   • Ensighten (consent manager) stays: the warm profile needs to accept consent
-//     once, and its cookie is what lets later runs skip the overlay entirely.
-//   • Only static asset TYPES (image/media/font) and a known tracker HOST list
-//     are blocked — never scripts, styles, XHR or documents.
-const DIET_BLOCKED_TYPES = new Set(['image', 'media', 'font']);
-const DIET_ALLOW_HOSTS =
-  /(?:^|\.)(google\.com|gstatic\.com|recaptcha\.net)$/i;
-const DIET_BLOCKED_HOSTS =
-  /(?:^|\.)(lighthouselabs\.eu|vwonehub\.io|criteo\.(?:com|net)|facebook\.(?:com|net)|taboola\.com|hotjar\.(?:com|io)|licdn\.com|linkedin\.com|adnxs\.com|doubleclick\.net|google-analytics\.com|googletagmanager\.com|bat\.bing\.com|tiktok\.com|snapchat\.com|pinterest\.(?:com|net))$/i;
-
-// Install once per browser context (guarded — mintFromConfigurator is called
-// repeatedly on the same context). Best-effort: if routing fails (e.g. an odd
-// CDP attach), scrape without the diet rather than not at all.
-async function installNetworkDiet(context, logger) {
-  if (context.__vwNetworkDiet) return;
-  context.__vwNetworkDiet = true;
-  try {
-    await context.route('**/*', (route) => {
-      const req = route.request();
-      let host = '';
-      try {
-        host = new URL(req.url()).hostname;
-      } catch {
-        /* non-URL scheme — let it through */
-      }
-      if (DIET_ALLOW_HOSTS.test(host)) return route.continue();
-      if (DIET_BLOCKED_HOSTS.test(host)) return route.abort();
-      if (DIET_BLOCKED_TYPES.has(req.resourceType())) return route.abort();
-      return route.continue();
-    });
-    logger.debug('VW network diet installed (assets + trackers blocked)');
-  } catch (err) {
-    context.__vwNetworkDiet = false;
-    logger.warn({ err: err.message }, 'VW network diet not installed — continuing without');
-  }
-}
-
-// ---------------------------------------------------------------------------
 // milesFinance widget driving (ports of the Audi helpers — identical widget)
 // ---------------------------------------------------------------------------
 
@@ -821,7 +769,6 @@ export async function mintFromConfigurator(
   model,
   { logger, timeoutMs = 90000, downPaymentPct = 0 },
 ) {
-  await installNetworkDiet(context, logger);
   const page = await context.newPage();
 
   // Capture every finance-calculation XHR across the whole flow (incl. popups).
