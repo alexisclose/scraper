@@ -200,20 +200,14 @@ export async function discoverConfiguratorModels({ logger }) {
   }
   logger.info({ resolved: models.length, fromTrims: trims.length }, 'VW configurator models resolved');
 
-  // Never cache an empty OR PARTIAL resolve. Caching 0 would silently starve
-  // every run for 24h (the trap behind the original "discovers 0 models" report),
-  // and a throttled oneapi window can resolve only a fraction of the trims —
-  // observed live: 18/45 cached, which would silently shrink every sweep for the
-  // rest of the day. Serve partial results for THIS run, but only persist a
-  // (near-)complete resolve; 90% allows a few genuinely-retired trims.
-  const complete = trims.length > 0 && models.length >= Math.ceil(trims.length * 0.9);
-  if (complete) {
+  // Never cache an empty list: caching 0 would silently starve every run for the
+  // next 24h (the exact trap behind the original "discovers 0 models" report).
+  if (models.length) {
     cache.set('configurator-models', models);
   } else {
     logger.warn(
-      { resolved: models.length, fromTrims: trims.length },
-      'VW discovery incomplete — NOT caching (would pin a shrunken model list for 24h). ' +
-        'Check oneapi reachability / throttling / x-api-key (VW_ONEAPI_KEY).',
+      { fromTrims: trims.length },
+      'VW resolved 0 configurator models — NOT caching the empty result. Check oneapi reachability and x-api-key (VW_ONEAPI_KEY).',
     );
   }
   return models;
@@ -490,7 +484,7 @@ async function selectBusinessRenting(page, logger) {
   } else {
     logger.warn('VW Financiële Renting radio not found — staying on default product');
   }
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(2000);
   return checked;
 }
 
@@ -632,20 +626,9 @@ async function setDownPaymentPct(page, pct, logger, financeApi = []) {
         break;
       }
     }
-    // Wake the instant a Calculate response returns instead of polling the full
-    // ~12s: this is the single biggest per-model time sink. The context response
-    // listener records every Calculate into `financeApi`; recalcLanded stays the
-    // authoritative check (confirms the response carried our amount). waitForResponse
-    // only sees responses AFTER this call, so we check recalcLanded first (covers a
-    // Calculate that already landed in the gap since the fill), then wait for the
-    // next one — bounded to keep the old ~12s ceiling while resolving far faster in
-    // the common case (the recalc usually lands in 1-3s).
-    let verified = recalcLanded(since);
-    for (let round = 0; round < 3 && !verified; round += 1) {
-      await page
-        .waitForResponse((res) => /FinanceApi\/Calculate/i.test(res.url()), { timeout: 5000 })
-        .catch(() => {});
-      await page.waitForTimeout(250); // let the listener capture + JSON-parse the body
+    let verified = false;
+    for (let i = 0; i < 24 && !verified; i += 1) {
+      await page.waitForTimeout(500);
       verified = recalcLanded(since);
     }
     if (verified) {
@@ -847,7 +830,7 @@ export async function mintFromConfigurator(
     .filter({ hasText: /bereken mijn maandprijs/i })
     .first();
   await berekenCta.waitFor({ state: 'visible', timeout: 40000 }).catch(() => {});
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1500);
 
   // Click the finance CTA and WAIT for the formsccf navigation. Only re-click
   // after a long wait so we don't fire a second click mid-navigation.
@@ -885,7 +868,7 @@ export async function mintFromConfigurator(
   // out and is interactable before we dismiss its cookie overlay and drive the
   // renting selection.
   await finalPage.bringToFront().catch(() => {});
-  await finalPage.waitForTimeout(1200);
+  await finalPage.waitForTimeout(2000);
   if (!/\/Base\/Oops/i.test(finalUrl)) {
     // CRITICAL: the finance form (formsccf) renders its OWN cookie-consent overlay
     // (`#privacy-shadow`), separate from the configurator's. Until it is dismissed
@@ -900,7 +883,7 @@ export async function mintFromConfigurator(
     await selectBusinessRenting(finalPage, logger).catch((err) =>
       logger.warn({ model: model.id, err: err.message }, 'VW product selection error'),
     );
-    await finalPage.waitForTimeout(800);
+    await finalPage.waitForTimeout(1500);
 
     if (downPaymentPct > 0) {
       const set = await setDownPaymentPct(finalPage, downPaymentPct, logger, financeApi).catch(
