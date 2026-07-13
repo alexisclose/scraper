@@ -21,6 +21,14 @@ import { parseVwOffer } from './parser.js';
 
 const brandConfig = brandConfigs['vw-finance'];
 
+// Business rule: only these VW ranges are scraped via the configurator. Matched
+// as case-insensitive substrings of the discovered model id (ids look like
+// `golf__life-business`, `id-4__id4-pro-business`, `id-7-tourer__...`). "golf"
+// also covers Golf Variant; "id-7" covers ID.7 and ID.7 Tourer. Everything else
+// discovered (Passat, Polo, T-Cross, T-Roc, Taigo, ...) is dropped. Override for
+// diagnostics with VW_MODELS.
+const MODEL_ALLOWLIST = ['golf', 'id-3', 'id-4', 'id-5', 'id-7', 'tiguan'];
+
 // Turn a fetched finance-form result into a validated offer, or null + a logged
 // reason.
 function buildOfferOrSkip({
@@ -62,17 +70,21 @@ function buildOfferOrSkip({
 
 async function run({ logger, runId, browserConcurrency }) {
   let models = await discoverConfiguratorModels({ logger });
-  // VW_MODELS (config.vw.models): keep only models whose id contains one of the
-  // comma-separated substrings — a diagnostic knob to target specific families
-  // (e.g. "id-4,id-5,passat") without scraping the whole set.
-  if (config.vw.models) {
-    const wanted = config.vw.models
-      .split(',')
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean);
+  // Restrict to the scraped ranges. Default = MODEL_ALLOWLIST (Golf, ID.3, ID.4,
+  // ID.5, ID.7, Tiguan); VW_MODELS overrides it with a comma-separated substring
+  // list for diagnostics (e.g. "id-4,passat"). Always applied.
+  {
+    const wanted = (
+      config.vw.models
+        ? config.vw.models.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+        : MODEL_ALLOWLIST
+    );
     const before = models.length;
     models = models.filter((m) => wanted.some((w) => String(m.id).toLowerCase().includes(w)));
-    logger.info({ filter: wanted, kept: models.length, of: before }, 'VW_MODELS filter active');
+    logger.info(
+      { filter: wanted, kept: models.length, of: before, source: config.vw.models ? 'VW_MODELS' : 'default allowlist' },
+      'VW model allowlist applied',
+    );
   }
   // VW_LIMIT (config.vw.limit): scrape only the first N models — a diagnostic
   // knob for fast iteration (a 5-model run surfaces issues in ~5 min instead of
