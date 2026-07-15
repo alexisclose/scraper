@@ -24,7 +24,7 @@
 //   3. fetchByCode — direct-HTTP fast path for an already-minted CCF code
 //      (price-only; codes expire then 302 to Base/Oops).
 /* global document, getComputedStyle */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { httpFetch } from '../../libraries/http/fetch.js';
@@ -53,55 +53,93 @@ const HTML_HEADERS = {
 };
 
 // ---------------------------------------------------------------------------
-// Discovery: best-deals trims -> resolved modelId -> configurator summary URL
+// Discovery: modellen.html nav tree -> one headline model per carline
 // ---------------------------------------------------------------------------
+//
+// modellen.html embeds the full model nav tree as %-encoded escaped JSON. Each
+// "salesgroup" node carries a referenceModel.key with EVERYTHING we need —
+// carlineId/salesgroupId/trimId, the modelId (E-code) directly, modelYear and the
+// trim description — so no oneapi resolve is needed. The node's first child
+// "trim" node gives the URL slug, and the node's second path segment is the nav
+// SECTION (best-deals / varianten-van-de-X / basisuitvoering / sportuitvoering).
+// We parse ALL model nodes (not just best-deals) and keep ONE headline trim per
+// carline, so every model is covered regardless of whether it's on promotion.
 
-// Committed fallback list of trim descriptors (carline/salesgroup/trim + slugs),
-// scraped from modellen.html. Used when live nav-tree discovery comes up empty.
-const STATIC_TRIMS = JSON.parse(
-  readFileSync(join(__dirname, 'data', 'candidate-trims.json'), 'utf8'),
-).trims;
+const CARLINE_PRETTY = {
+  golf: 'Golf',
+  'golf-variant': 'Golf Variant',
+  'id-3': 'ID.3',
+  'id-3-neo': 'ID.3',
+  'id-4': 'ID.4',
+  'id-5': 'ID.5',
+  'id-7': 'ID.7',
+  'id-7-tourer': 'ID.7 Tourer',
+  tiguan: 'Tiguan',
+};
 
-// The modellen.html nav tree is embedded as %-encoded escaped JSON, so the
-// field markers appear as `%5C%22<key>%5C%22` (i.e. \"key\"). Match the
-// best-deals trim nodes and pull out carlineId / salesgroupId / trimId.
-const Q = '%5C%22'; // \"
-const TRIM_NODE_RE = new RegExp(
-  `${Q}nodeId${Q}:${Q}(/[a-z0-9-]+/best-deals/[a-z0-9-]+)${Q}[\\s\\S]{0,400}?` +
-    `${Q}carlineId${Q}:${Q}(\\d+)${Q},${Q}salesgroupId${Q}:${Q}(\\d+)${Q},${Q}trimId${Q}:${Q}([\\s\\S]+?)${Q}` +
-    `[\\s\\S]{0,200}?${Q}name${Q}:${Q}([\\s\\S]+?)${Q}`,
-  'gi',
-);
+// Headline preference per carline: the promoted best-deal first, then the model's
+// main "varianten" page, then the base version; sport variants (GTI/R) last since
+// they are not the mainstream/popular pick.
+const sectionRank = (s) =>
+  s === 'best-deals' ? 0 : /^varianten/i.test(s) ? 1 : /basisuitvoering/i.test(s) ? 2 : /sport/i.test(s) ? 9 : 3;
 
-// Parse the best-deals trim descriptors out of the modellen.html source.
-export function parseTrimsFromModelsPage(html) {
+// Parse every model node from modellen.html. The raw text is %-encoded, so we
+// first normalise only the STRUCTURAL markers (\" { } [ ] , :) to get clean
+// "key":"value" pairs, leaving field values %-encoded for per-field decoding.
+export function parseModelNodesFromPage(html) {
+  const norm = String(html || '')
+    .replace(/%5C%22/g, '"')
+    .replace(/%7B/g, '{')
+    .replace(/%7D/g, '}')
+    .replace(/%5B/g, '[')
+    .replace(/%5D/g, ']')
+    .replace(/%2C/g, ',')
+    .replace(/%3A/g, ':');
+  const re =
+    /"nodeId":"(\/[a-z0-9-]+\/[a-zA-Z0-9-]+)"[\s\S]{0,200}?"referenceModel":[\s\S]{0,120}?"carlineId":"(\d+)","salesgroupId":"(\d+)","trimId":"([^"]+)","modelId":"([^"]+)","modelYear":"(\d+)","modelVersion":"\d+"},"modelName":"([^"]*)"[\s\S]{0,600}?"nodeId":"(\/[a-z0-9-]+\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+)"/g;
+  const dec = (s) => decodeURIComponent(String(s).replace(/\+/g, ' ')).trim();
+  const nodes = [];
   const seen = new Set();
-  const trims = [];
   let m;
-  const re = new RegExp(TRIM_NODE_RE.source, 'gi');
-  while ((m = re.exec(html))) {
-    const nodeId = m[1];
-    if (seen.has(nodeId)) continue;
-    seen.add(nodeId);
-    const parts = nodeId.split('/'); // ["", carline, "best-deals", trim]
-    trims.push({
-      id: nodeId.replace(/^\//, '').replace(/\/best-deals\//, '__'),
+  while ((m = re.exec(norm))) {
+    if (seen.has(m[1])) continue;
+    seen.add(m[1]);
+    const parts = m[1].split('/'); // ["", carline, section]
+    const child = m[8].split('/'); // ["", carline, section, trimSlug]
+    if (child[1] !== parts[1] || child[2] !== parts[2]) continue;
+    const trimId = dec(m[4]);
+    const modelName = dec(m[7]) || trimId;
+    nodes.push({
       carlineSlug: parts[1],
-      trimSlug: parts[3],
+      section: parts[2],
+      trimSlug: child[3],
       carlineId: m[2],
       salesgroupId: m[3],
-      trimId: decodeURIComponent(m[4].replace(/\+/g, ' ')),
-      name: decodeURIComponent(m[5].replace(/\+/g, ' ')),
+      trimId,
+      modelId: dec(m[5]),
+      modelYear: m[6],
+      name: modelName,
+      displayName: `${CARLINE_PRETTY[parts[1]] || parts[1]} ${modelName}`.replace(/\s+/g, ' ').trim(),
+      range: CARLINE_PRETTY[parts[1]] || parts[1],
     });
   }
-  return trims.sort((a, b) => a.id.localeCompare(b.id));
+  // One headline trim per carline.
+  const byCar = new Map();
+  for (const n of nodes) {
+    const cur = byCar.get(n.carlineSlug);
+    if (!cur || sectionRank(n.section) < sectionRank(cur.section)) byCar.set(n.carlineSlug, n);
+  }
+  return [...byCar.values()]
+    .map((n) => ({ ...n, id: n.carlineSlug }))
+    .sort((a, b) => a.id.localeCompare(b.id));
 }
 
 // Build the configurator summary URL the browser drives to mint a code. The
 // `---=` navigation param must be encoded EXACTLY ONCE (URLSearchParams would
 // double-encode it), so we assemble it by hand and append the rest normally.
 export function buildConfiguratorUrl(model) {
-  const { carlineSlug, trimSlug, carlineId, salesgroupId, trimId, modelId, modelYear } = model;
+  const { carlineSlug, section, trimSlug, carlineId, salesgroupId, trimId, modelId, modelYear } =
+    model;
   const configStep = encodeURIComponent(
     JSON.stringify({ context: `${carlineId}-${salesgroupId}-${trimId}`, selectedStep: 'summary' }),
   );
@@ -117,97 +155,48 @@ export function buildConfiguratorUrl(model) {
     'modelVersion-app': '0',
     'modelYear-app': String(modelYear || new Date().getFullYear()),
   });
-  return `${brandConfig.endpoints.configurator}/__app/${carlineSlug}/best-deals/${trimSlug}.app?---=${nav}&${rest}`;
+  // The path's middle segment is the nav SECTION (best-deals / varianten-van-de-X
+  // / basisuitvoering …) the trim lives under in modellen.html — using the real
+  // section (not a hardcoded "best-deals") is what lets non-promo models resolve.
+  return `${brandConfig.endpoints.configurator}/__app/${carlineSlug}/${section || 'best-deals'}/${trimSlug}.app?---=${nav}&${rest}`;
 }
 
-// Resolve a trim's default modelId (E-code) via the public configurator API.
-// Returns { modelId, modelYear, longName, carlineName, priceGross } or null.
-async function resolveModelId(trim, { logger }) {
-  const url =
-    `${brandConfig.endpoints.catalogueModels}?tenant=${brandConfig.endpoints.tenant}` +
-    `&salesgroupKey=${trim.salesgroupId}&carlineKey=${trim.carlineId}` +
-    `&modelFilters=${encodeURIComponent('EquipmentLine:' + trim.trimId)}&fetchPrices=true`;
-  try {
-    const res = await httpFetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'x-api-key': config.vw.oneapiKey,
-        Origin: 'https://www.volkswagen.be',
-        Referer: 'https://www.volkswagen.be/',
-      },
-    });
-    const json = await res.json();
-    const model = (json.models || [])[0];
-    if (!model?.code) {
-      logger.warn({ trim: trim.id }, 'VW model resolve returned no code');
-      return null;
-    }
-    const priceGross =
-      parseEur(model.prices?.total?.value) ??
-      parseEur(model.prices?.cash?.value) ??
-      parseEur(model.prices?.[0]?.value) ??
-      null;
-    return {
-      modelId: model.code,
-      modelYear: model.year || null,
-      longName: model.longName || model.name || null,
-      carlineName: model.carlineName || null,
-      priceGross,
-    };
-  } catch (err) {
-    logger.warn({ trim: trim.id, err: err.message }, 'VW model resolve failed');
-    return null;
-  }
-}
-
-// Discover every best-deals trim and turn it into a configurator model the
-// browser can drive. Prefers a live crawl of modellen.html (self-updating);
-// falls back to the committed trim list. Resolves each trim's modelId via the
-// oneapi catalogue, drops trims that can't resolve (logged). Cached on disk.
+// Discover the headline model per carline from modellen.html and turn each into a
+// configurator model the browser drives. The modelId (E-code) comes straight from
+// the page's referenceModel.key, so this is a single HTTP fetch — no per-trim
+// oneapi resolve. Cached on disk for a day; an empty result is never cached (a
+// transient fetch failure must not pin discovery at 0 for the whole TTL — the
+// trap behind the original "discovers 0 models" report).
 export async function discoverConfiguratorModels({ logger }) {
   const cache = new JsonCache({
     dir: join(config.paths.dataDir, 'cache', 'vw-finance'),
     bypass: config.vw.noCache,
     ttlMs: 24 * 60 * 60 * 1000, // 1 day
   });
-  // Serve a non-empty cached result; a cached EMPTY list is treated as a miss so a
-  // past transient failure can't pin discovery at 0 for the whole TTL.
   const cached = cache.get('configurator-models');
   if (cached && cached.length) return cached;
 
-  let trims = [];
+  let nodes = [];
   try {
     const res = await httpFetch(brandConfig.endpoints.modelsPage, { headers: HTML_HEADERS });
-    trims = parseTrimsFromModelsPage(await res.text());
-    logger.info({ trims: trims.length }, 'VW best-deals trims discovered (live nav tree)');
+    nodes = parseModelNodesFromPage(await res.text());
+    logger.info(
+      { models: nodes.length, carlines: nodes.map((n) => n.id) },
+      'VW model nodes discovered (live nav tree)',
+    );
   } catch (err) {
-    logger.warn({ err: err.message }, 'VW live trim discovery failed — using committed list');
-  }
-  if (!trims.length) {
-    trims = STATIC_TRIMS;
-    logger.info({ trims: trims.length }, 'VW using committed trim list');
+    logger.warn({ err: err.message }, 'VW live model discovery failed');
   }
 
-  const models = [];
-  for (const trim of trims) {
-    const resolved = await resolveModelId(trim, { logger });
-    if (!resolved) continue;
-    const model = { ...trim, ...resolved };
-    model.displayName = resolved.longName || `Volkswagen ${trim.name}`.replace(/\s+/g, ' ').trim();
-    model.range = resolved.carlineName || null;
-    model.configuratorUrl = buildConfiguratorUrl(model);
-    models.push(model);
-  }
-  logger.info({ resolved: models.length, fromTrims: trims.length }, 'VW configurator models resolved');
+  const models = nodes.map((n) => ({ ...n, configuratorUrl: buildConfiguratorUrl(n) }));
+  logger.info({ resolved: models.length }, 'VW configurator models resolved');
 
-  // Never cache an empty list: caching 0 would silently starve every run for the
-  // next 24h (the exact trap behind the original "discovers 0 models" report).
   if (models.length) {
     cache.set('configurator-models', models);
   } else {
     logger.warn(
-      { fromTrims: trims.length },
-      'VW resolved 0 configurator models — NOT caching the empty result. Check oneapi reachability and x-api-key (VW_ONEAPI_KEY).',
+      {},
+      'VW discovered 0 configurator models — NOT caching. Check modellen.html reachability / nav-tree format.',
     );
   }
   return models;
