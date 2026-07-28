@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config, brandConfigs } from '../../configs/index.js';
-import { launchBrowser } from '../../libraries/browser/launch.js';
+import { launchBrowser, killChromeByProfileDir } from '../../libraries/browser/launch.js';
 import { validateOffer } from '../../libraries/schema/lease-offer.js';
 import { BrowserError } from '../../libraries/error-handling/AppError.js';
 import { defaultToExcelRow } from '../shared/brand-adapter.js';
@@ -211,6 +211,11 @@ async function run({ logger, runId }) {
     }
   } finally {
     await cleanup();
+    // `cleanup()` for spawn-cdp deliberately leaves the browser open (so a
+    // developer can reuse the session), but in a scrape run that means the
+    // detached Chrome outlives the process. Kill the tree we spawned so repeated
+    // runs don't accumulate zombie Chromes.
+    await killChromeByProfileDir(profileDir);
   }
 
   logger.info(
