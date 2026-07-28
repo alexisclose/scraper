@@ -215,6 +215,32 @@ async function run({ logger, runId }) {
 
     const succeeded = new Set();
 
+    // Hard per-model deadline. The configurator drive is a long chain of un-timed
+    // page.evaluate/click calls, so a wedged page or CDP connection blocks
+    // FOREVER — one stuck model would otherwise freeze the whole sweep (observed
+    // on the sibling VW flow: a ~2-hour hang with no output). On timeout we abort
+    // the model and recycle the browser so the run always makes progress. 5 min
+    // comfortably exceeds a legitimately slow model (~3-4 min worst case with the
+    // fetcher's internal retries) while still catching a true hang quickly.
+    const MODEL_DEADLINE_MS = 5 * 60 * 1000;
+    const withDeadline = (promise, ms) =>
+      new Promise((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error(`AUDI_MODEL_TIMEOUT after ${ms}ms`)),
+          ms,
+        );
+        promise.then(
+          (v) => {
+            clearTimeout(timer);
+            resolve(v);
+          },
+          (e) => {
+            clearTimeout(timer);
+            reject(e);
+          },
+        );
+      });
+
     // Run one model on a lane with up to `maxAttempts`, recycling on crash.
     // Returns true on success. Records the failure reason for the summary.
     const runModel = async (lane, model, maxAttempts) => {
@@ -224,7 +250,7 @@ async function run({ logger, runId }) {
       }
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         try {
-          const offer = await scrapeModel(lane.context, model);
+          const offer = await withDeadline(scrapeModel(lane.context, model), MODEL_DEADLINE_MS);
           lane.noteDone();
           if (offer && offer.financialRenting.monthlyNet != null) {
             offers.push(offer);
@@ -244,7 +270,13 @@ async function run({ logger, runId }) {
         } catch (err) {
           const reason = err.message || 'AUDI_CONFIGURATOR_FAILED';
           lastReason.set(model.id, reason);
-          if (/closed|crash|disconnect|Target (?:page|closed)|browser has been/i.test(reason)) {
+          // A timed-out model means the page/CDP is wedged — recycle the browser
+          // alongside the genuine crash signatures, or the next model inherits it.
+          if (
+            /closed|crash|disconnect|Target (?:page|closed)|browser has been|AUDI_MODEL_TIMEOUT/i.test(
+              reason,
+            )
+          ) {
             if (!(await lane.relaunch())) {
               lastReason.set(model.id, 'BROWSER_RELAUNCH_FAILED');
               return false;
