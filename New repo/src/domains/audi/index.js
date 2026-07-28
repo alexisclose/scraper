@@ -19,7 +19,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config, brandConfigs } from '../../configs/index.js';
 import { writeJson } from '../../libraries/io/json-store.js';
-import { launchBrowser } from '../../libraries/browser/launch.js';
+import { launchBrowser, killChromeByProfileDir } from '../../libraries/browser/launch.js';
 import { validateOffer } from '../../libraries/schema/lease-offer.js';
 import { AppError } from '../../libraries/error-handling/AppError.js';
 import { defaultToExcelRow } from '../shared/brand-adapter.js';
@@ -162,17 +162,32 @@ async function run({ logger, runId }) {
       let seq = 0;
       let handle = null;
       let sinceRestart = 0;
-      const launch = () =>
-        launchBrowser({
+      let currentProfileDir = null;
+      const launch = () => {
+        currentProfileDir = join(config.paths.browserProfilesDir, `audi-w${laneId}-${seq}`);
+        return launchBrowser({
           strategy: config.audi.headful ? 'patchright' : 'spawn-cdp',
           port: basePort + laneId * 60 + (seq % 50),
-          profileDir: join(config.paths.browserProfilesDir, `audi-w${laneId}-${seq}`),
+          profileDir: currentProfileDir,
           startUrl: CANDIDATE_MODELS[0]?.configuratorUrl || brandConfig.endpoints.home,
         });
+      };
       const close = async () => {
         await handle?.cleanup().catch(() => {});
-        await handle?.context?.browser()?.close().catch(() => {});
+        // Cap the CDP close: on a wedged connection it can hang, and we must
+        // always reach the OS-level kill below.
+        const browserClose = handle?.context?.browser()?.close?.() ?? Promise.resolve();
+        await Promise.race([
+          Promise.resolve(browserClose).catch(() => {}),
+          new Promise((r) => setTimeout(r, 8000)),
+        ]);
         handle = null;
+        // browser().close() only DISCONNECTS CDP — the detached spawn-cdp Chrome
+        // (and its renderer/GPU children) keeps running. Audi recycles its lane
+        // every few models across 17 models + a cleanup pass, so without this the
+        // zombies pile up and starve later models (a long sweep once reached ~138
+        // chrome.exe). patchright closes its own browser, so only kill for spawn-cdp.
+        if (!config.audi.headful) await killChromeByProfileDir(currentProfileDir);
       };
       const relaunch = async () => {
         await close();

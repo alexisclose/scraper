@@ -34,12 +34,6 @@ function buildConfig() {
     },
     vw: {
       noCache: bool(env.VW_NO_CACHE) ?? false,
-      headful: bool(env.VW_HEADFUL) ?? false,
-      concurrency: env.VW_CONCURRENCY,
-      oneapiKey: env.VW_ONEAPI_KEY || undefined,
-      limit: env.VW_LIMIT,
-      models: env.VW_MODELS || undefined,
-      modelDelayMs: env.VW_MODEL_DELAY_MS,
     },
     audi: {
       noCache: bool(env.AUDI_NO_CACHE) ?? false,
@@ -64,7 +58,7 @@ function buildConfig() {
 
 export const config = buildConfig();
 
-const brandFiles = ['bmw', 'mercedes', 'tesla', 'vw', 'vw-finance', 'audi'];
+const brandFiles = ['bmw', 'mercedes', 'tesla', 'vw', 'audi'];
 export const brandConfigs = Object.fromEntries(
   brandFiles.map((id) => {
     const json = JSON.parse(readFileSync(join(__dirname, 'brands', `${id}.json`), 'utf8'));
