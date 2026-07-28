@@ -10,14 +10,6 @@ import { z } from 'zod';
 // on which they show by default (BMW: net; Tesla: mixed; VW: gross), but the
 // schema is symmetric so adapters can hand either side and let the BTW helper
 // fill in the other.
-const moneyPair = (key) =>
-  z
-    .object({
-      [`${key}Net`]: z.number().nullable(),
-      [`${key}Gross`]: z.number().nullable(),
-    })
-    .partial();
-
 export const financialRentingSchema = z.object({
   productName: z.string(),
   productId: z.string(),
@@ -76,5 +68,3 @@ export const leaseOfferArraySchema = z.array(leaseOfferSchema);
 export function validateOffer(raw) {
   return leaseOfferSchema.parse(raw);
 }
-
-export { moneyPair };
