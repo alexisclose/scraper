@@ -31,31 +31,11 @@ export const configSchema = z.object({
     chromeExecutable: z.string().optional(),
   }),
 
+  // The `vw` adapter is pure HTTP (promotions pages); it only needs the cache
+  // bypass. (The configurator-driven vw-finance adapter and its browser/throttle
+  // knobs were removed — VW's reCAPTCHA gate made it unviable to automate.)
   vw: z.object({
     noCache: z.boolean().default(false),
-    // The knobs below drive the configurator-based `vw-finance` adapter (the
-    // plain `vw` adapter is pure HTTP and ignores them).
-    // When true, drive the configurator with a visible browser (debugging the
-    // cookie wall + "Bereken mijn maandprijs" click locally).
-    headful: z.boolean().default(false),
-    // Number of browsers run in parallel across the trim sweep. Default 1: a
-    // single browser is the gentlest footprint on VW (slowest to trip the per-IP
-    // throttle that bounces mints to /Base/Oops) and avoids the browser-launcher
-    // exhaustion seen under parallel retry churn. Raise via VW_CONCURRENCY on a
-    // fresh IP / proxy where speed matters more than stealth.
-    concurrency: intFromEnv(1),
-    // Pause between models (ms) to keep the request rate gentle. VW_MODEL_DELAY_MS.
-    modelDelayMs: intFromEnv(2500),
-    // oneapi.volkswagen.com x-api-key used to resolve each trim's default
-    // modelId (E-code). It's the public key the configurator JS itself sends;
-    // override via VW_ONEAPI_KEY if VW rotates it.
-    oneapiKey: z.string().default('Ox5AegtsLDecFmKHxYdf599VKBCpHsX4'),
-    // VW_LIMIT: cap the number of models scraped (0 = all). Diagnostic knob for
-    // fast iteration — scrape the first N discovered models instead of all ~45.
-    limit: intFromEnv(0),
-    // VW_MODELS: comma-separated id substrings to scrape only matching models
-    // (e.g. "id-4,id-5,passat"). Diagnostic knob to target specific families.
-    models: z.string().optional(),
   }),
 
   audi: z.object({
@@ -76,7 +56,7 @@ export const configSchema = z.object({
 });
 
 export const brandConfigSchema = z.object({
-  id: z.enum(['bmw', 'mercedes', 'tesla', 'vw', 'vw-finance', 'audi']),
+  id: z.enum(['bmw', 'mercedes', 'tesla', 'vw', 'audi']),
   displayName: z.string(),
   productName: z.string(),
   productId: z.string(),
