@@ -35,8 +35,15 @@ export async function captureCalculation(context, url, { logger, timeoutMs = 250
   let captured = null;
   page.on('response', async (resp) => {
     const u = resp.url();
+    // BMW renamed this endpoint (2026): the finance-services gateway now serves
+    // the default calculation from `operations/open` (and re-serves it from
+    // `operations/asset-change` after a configuration change) instead of
+    // `operations/default-calculation`. The payload shape is unchanged — the same
+    // { data: [...], total } envelope carrying totalInstallment / vehiclePrices —
+    // so only the URL matcher moves. The old name is kept so a rollback on BMW's
+    // side (or a cached older bundle) still matches.
     if (
-      u.includes('operations/default-calculation') &&
+      /operations\/(open|asset-change|default-calculation)/.test(u) &&
       (resp.headers()['content-type'] || '').includes('json')
     ) {
       try {
