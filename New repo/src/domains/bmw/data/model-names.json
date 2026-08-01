@@ -22,7 +22,6 @@
   "G26/61HD": "BMW i4 eDrive40 Gran Coupé",
   "G26/71HD": "BMW i4 M60 xDrive Gran Coupé",
   "G09/11CS": "BMW XM 50e",
-  "G05/41EU": "BMW X5 xDrive50e",
   "G45/65GP": "BMW X3 30e xDrive",
   "U11/31EF": "BMW X1 xDrive30e",
   "G70/41EH": "BMW 750e xDrive (2022)",
@@ -39,9 +38,6 @@
   "G06/31EX": "BMW X6 xDrive40i",
   "G06/41EX": "BMW X6 M60i xDrive",
   "F96/21ET": "BMW X6 M Competition",
-  "G05/21EU": "BMW X5 xDrive40i",
-  "G05/31EU": "BMW X5 M60i xDrive",
-  "F95/11ET": "BMW X5 M Competition",
   "G45/31GP": "BMW X3 20 xDrive",
   "G45/71GP": "BMW X3 M50 xDrive",
   "U10/21GM": "BMW X2 sDrive20i",
@@ -74,7 +70,6 @@
   "F70/21GE": "BMW M135 xDrive",
   "G07/21EN": "BMW X7 xDrive40d",
   "G06/11EY": "BMW X6 xDrive30d",
-  "G05/11EV": "BMW X5 xDrive30d",
   "U10/41GN": "BMW X2 sDrive20d",
   "U11/11EG": "BMW X1 sDrive18d",
   "G70/21EJ": "BMW 740d xDrive (2022)",
@@ -91,5 +86,6 @@
   "G42/11CN": "BMW 220d Coupé",
   "F74/11GH": "BMW 218d Gran Coupé",
   "U06/21BY": "BMW 218d Active Tourer",
-  "F70/11GF": "BMW 118d"
+  "F70/11GF": "BMW 118d",
+  "G65/61JF": "BMW X5 40 xDrive"
 }
