@@ -1,5 +1,5 @@
 {
-  "_comment": "Audi (Belgium) finance inputs. 'models' are configurator entry points (carline/variant) with a default 'pr=' build string; the browser fetcher opens each, accepts cookies, clicks 'Bereken uw maandprijs' to mint a fresh CCF code, selects the BUSINESS 'Financiële Renting' product, sets the down payment to 20% (defaults.firstPaymentPct in audi.json) and reads the form's recomputed monthly. The pr URLs were discovered+verified from www.audi.be (each redirects to the model's default config summary). To refresh/extend: load a model's /configurator/?#summary, let it resolve a pr, and copy the URL. 'codes' are already-minted CCF codes for the direct-HTTP fast path (price-only; they expire).",
+  "_comment": "Audi (Belgium) finance inputs. 'models' are configurator entry points (carline/variant) with a default 'pr=' build string; the browser fetcher opens each, accepts cookies, clicks 'Bereken uw maandprijs' to mint a fresh CCF code, selects the BUSINESS 'Financiële Renting' product, sets the down payment to 20% (defaults.firstPaymentPct in audi.json) and reads the form's recomputed monthly. The pr URLs were discovered+verified from www.audi.be (each redirects to the model's default config summary). To refresh/extend: load a model's /configurator/?#summary, let it resolve a pr, and copy the URL. 'codes' are already-minted CCF codes for the direct-HTTP fast path (price-only; they expire). Configs last refreshed 2026-08-01 by scripts/refresh-audi-configs.mjs (the pr= strings go stale when Audi facelifts a range; refresh them when the fetcher starts self-healing often).",
   "models": [
     {
       "id": "a1-sportback",
@@ -11,37 +11,37 @@
       "id": "a3-sportback",
       "displayName": "Audi A3 Sportback",
       "range": "A3",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/a3-sportback/configurator/?pr=8YFANC0_2026%7C2D2D%7CAI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/nieuwe-a3-sportback/configurator/?pr=8YYANC1_2027%7C2D2D%7CAI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "s3-sportback",
       "displayName": "Audi S3 Sportback",
       "range": "S3",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/s3-sportback/configurator/?pr=8YFS5Y0_2026%7CZ9Z9%7CEI%7CT222222%7CGYEHYEH%7CMASGEB4%7CTQ00Q00%7CT930930%7CT222222%7CTQ00Q00%7CT930930#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a3/nieuwe-s3-sportback/configurator/?pr=8YYS5Y0_2027%7CZ9Z9%7CEI%7CT222222%7CGYEHYEH%7CT930930%7CMASGEB4%7CTQ00Q00%7CT222222%7CT930930%7CTQ00Q00#summary"
     },
     {
       "id": "a5-avant",
       "displayName": "Audi A5 Avant",
       "range": "A5",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/a5/a5-avant/configurator/?pr=FU5APG3_2026%7CL5L5%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a5/a5-avant/configurator/?pr=FU5APG0_2027%7CL5L5%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "a6-avant",
       "displayName": "Audi A6 Avant",
       "range": "A6",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/a6/a6-avant/configurator/?pr=FN5AZG6_2026%7C5U5U%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a6/a6-avant/configurator/?pr=FN5AZG0_2027%7C5U5U%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "a6-sportback-e-tron",
       "displayName": "Audi A6 Sportback e-tron",
       "range": "A6 e-tron",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/a6-e-tron/a6-sportback-e-tron/configurator/?pr=GHAABA0_2027%7CG5G5%7CMI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a6-e-tron/a6-sportback-e-tron/configurator/?pr=GHAABA1_2027%7CG5G5%7CMI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
     },
     {
       "id": "a6-avant-e-tron",
       "displayName": "Audi A6 Avant e-tron",
       "range": "A6 e-tron",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/a6-e-tron/a6-avant-e-tron/configurator/?pr=GH5ABA0_2027%7CG5G5%7CMI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/a6-e-tron/a6-avant-e-tron/configurator/?pr=GH5ABA1_2027%7CG5G5%7CMI%7CT222222%7CMASGEB4%7CGYEHYEH%7CT222222#summary"
     },
     {
       "id": "q2",
@@ -53,25 +53,25 @@
       "id": "q3-suv",
       "displayName": "Audi Q3 SUV",
       "range": "Q3",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-suv/configurator/?pr=FJBAZG1_2026%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-suv/configurator/?pr=FJBAZG1_2027%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "q3-sportback",
       "displayName": "Audi Q3 Sportback",
       "range": "Q3",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-sportback/configurator/?pr=FJNAZG1_2026%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q3/q3-sportback/configurator/?pr=FJNAZG1_2027%7CZ9Z9%7CFZ%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "q5-suv",
       "displayName": "Audi Q5 SUV",
       "range": "Q5",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/q5/q5-suv/configurator/?pr=GUBAZG1_2026%7CM4M4%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q5/q5-suv/configurator/?pr=GUBAZG2_2026%7CM4M4%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "q5-sportback",
       "displayName": "Audi Q5 Sportback",
       "range": "Q5",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/q5/q5-sportback/configurator/?pr=GUNAZG1_2026%7CL5L5%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q5/q5-sportback/configurator/?pr=GUNAZG2_2026%7CL5L5%7CMI%7CT222222%7CGYEHYEH%7CMASGEB4%7CT222222#summary"
     },
     {
       "id": "q6-e-tron",
