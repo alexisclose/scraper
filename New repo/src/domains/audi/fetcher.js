@@ -539,17 +539,66 @@ export async function mintFromConfigurator(
   // Click the finance CTA and WAIT (generously — the mint + redirect can be slow)
   // for the formsccf navigation. Only re-click after a long wait, so we don't
   // fire a second click while the first navigation is still in flight.
-  for (let clickAttempt = 1; clickAttempt <= 3 && !landed; clickAttempt += 1) {
-    if (clickAttempt === 1) await clickVisibleByText(page, /configuratie bekijken/i);
-    await berekenCta.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
-    const clicked = await clickVisibleByText(page, /bereken uw maandprijs/i);
-    logger[clicked ? 'info' : 'debug'](
-      { model: model.id, clickAttempt },
-      clicked ? 'Audi clicked Bereken uw maandprijs' : 'Audi Bereken button not clickable',
-    );
-    for (let i = 0; i < 35 && !landed; i += 1) await page.waitForTimeout(1000);
-    if (!landed && clickAttempt < 3) {
-      logger.warn({ model: model.id, clickAttempt }, 'Audi no formsccf yet — re-clicking CTA');
+  const clickThrough = async (label) => {
+    for (let clickAttempt = 1; clickAttempt <= 3 && !landed; clickAttempt += 1) {
+      if (clickAttempt === 1) await clickVisibleByText(page, /configuratie bekijken/i);
+      await page
+        .locator('a, button, [role="button"]')
+        .filter({ hasText: /bereken uw maandprijs/i })
+        .first()
+        .waitFor({ state: 'visible', timeout: 15000 })
+        .catch(() => {});
+      const clicked = await clickVisibleByText(page, /bereken uw maandprijs/i);
+      logger[clicked ? 'info' : 'debug'](
+        { model: model.id, clickAttempt, pass: label },
+        clicked ? 'Audi clicked Bereken uw maandprijs' : 'Audi Bereken button not clickable',
+      );
+      for (let i = 0; i < 35 && !landed; i += 1) await page.waitForTimeout(1000);
+      if (!landed && clickAttempt < 3) {
+        logger.warn({ model: model.id, clickAttempt, pass: label }, 'Audi no formsccf yet — re-clicking CTA');
+      }
+    }
+  };
+  await clickThrough('stored-config');
+
+  // SELF-HEAL: the committed `pr=` configuration strings are point-in-time
+  // snapshots. When a model is facelifted (new model year / retired option codes)
+  // its stored config goes stale: the CTA still renders, but Audi's quote backend
+  // answers the click with "Onverwachte fout — technische problemen" and no code
+  // is ever minted. Verified live on q3-suv, and it affected 8 of 17 models —
+  // every one of them a recently-refreshed range (a5/a6/q3/q5).
+  //
+  // Recovery: drop the stale query, load the BARE configurator and let the SPA
+  // build a valid default configuration itself (it rewrites the URL with a fresh
+  // `pr=` within a few seconds), then jump to that fresh config's #summary step —
+  // which is where the finance CTA lives — and click through again. This keeps the
+  // committed URL as the fast path and only pays the extra page loads when it fails.
+  if (!landed) {
+    const base = model.configuratorUrl.split('?')[0].split('#')[0];
+    logger.info({ model: model.id, base }, 'Audi stored config stale — rebuilding a fresh one');
+    try {
+      await page.goto(base, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+      await acceptCookies(page, logger);
+      // Poll for the SPA to self-configure (it stamps `pr=` into the URL).
+      let fresh = null;
+      for (let i = 0; i < 20 && !fresh; i += 1) {
+        await page.waitForTimeout(1000);
+        const u = page.url();
+        if (/[?&]pr=/.test(u)) fresh = u;
+      }
+      if (fresh) {
+        await page.goto(`${fresh.split('#')[0]}#summary`, {
+          waitUntil: 'domcontentloaded',
+          timeout: timeoutMs,
+        });
+        await acceptCookies(page, logger);
+        await page.waitForTimeout(6000);
+        await clickThrough('self-healed-config');
+      } else {
+        logger.warn({ model: model.id }, 'Audi self-heal: SPA never produced a fresh configuration');
+      }
+    } catch (err) {
+      logger.warn({ model: model.id, err: err.message }, 'Audi self-heal attempt failed');
     }
   }
   // Detach listeners regardless of outcome so they don't leak onto the context.
