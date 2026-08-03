@@ -75,9 +75,9 @@
     },
     {
       "id": "q6-e-tron",
-      "displayName": "Audi Q6 e-tron",
+      "displayName": "Audi Q6 SUV e-tron",
       "range": "Q6 e-tron",
-      "configuratorUrl": "https://www.audi.be/nl/modellen/q6-e-tron/q6-e-tron/configurator/?pr=GFBA1A0GWASWASGYEBYEB_2027%7CH1H1%7CFW%7CMHSW8IY%7CT222222%7CMASGEB4%7CMEIH5TG%7CGPWAPWA%7CGPQ1PQ1%7CGYEEYEE%7CGYEHYEH%7CGYEDYED%7CT222222#summary"
+      "configuratorUrl": "https://www.audi.be/nl/modellen/q6-e-tron/q6-suv-e-tron/configurator/?pr=GFBA1A0GWASWASGYEBYEB_2027%7CH1H1%7CFW%7CMHSW8IY%7CT222222%7CMASGEB4%7CMEIH5TG%7CGPWAPWA%7CGPQ1PQ1%7CGYEEYEE%7CGYEHYEH%7CGYEDYED%7CT222222#summary"
     },
     {
       "id": "q6-sportback-e-tron",
@@ -104,10 +104,5 @@
       "configuratorUrl": "https://www.audi.be/nl/modellen/e-tron-gt/rs-e-tron-gt/configurator/?pr=F8PR6D0_2027%7CZ9Z9%7CJN%7CGYEKYEK%7CT222222%7CMASGEA9%7CMLUM7HD%7CMVOSQ1J%7CMKMS4D3%7CMSIBN0Q%7CT222222#summary"
     }
   ],
-  "codes": [
-    {
-      "code": "AB8YS3VH",
-      "note": "Example A3 finance code from the task (direct-HTTP smoke input; may expire)."
-    }
-  ]
+  "codes": []
 }
