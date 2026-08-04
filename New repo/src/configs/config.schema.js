@@ -43,8 +43,13 @@ export const configSchema = z.object({
     // When true, drive the configurator with a visible browser (useful for
     // debugging the cookie/consent + "Bereken uw maandprijs" click locally).
     headful: z.boolean().default(false),
-    // Number of browsers run in parallel across the model sweep.
-    concurrency: intFromEnv(3),
+    // Number of browsers run in parallel across the model sweep. Defaults to 1:
+    // Audi rate-limits/bot-scores a hammered IP (observed 2026-08-04 — identical
+    // code on identical models decayed 17/17 -> 9/17 across repeated same-day
+    // sweeps), and parallel browsers multiply the request rate against the same
+    // config-mint + FinanceApi endpoints. Raise it back only with evidence that
+    // parallel sweeps aren't triggering that degradation.
+    concurrency: intFromEnv(1),
     // Comma-separated model ids to restrict the sweep to (debugging aid, e.g.
     // AUDI_MODELS=a3-sportback). Empty/unset = every candidate model.
     models: z.string().optional(),

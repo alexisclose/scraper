@@ -160,11 +160,25 @@ models):
   a logged reason.
 
 Models are scraped by a **pool of parallel browsers** (`AUDI_CONCURRENCY`,
-default 3). Each worker owns its own Chrome on a dedicated CDP port + ephemeral
-profile and recycles it every few models — the detached spawn-cdp Chrome leaks
-memory and crashes after a handful of heavy configurator pages, so isolation +
-recycling + a one-shot retry keep a full sweep reliable (~8–9 min for the whole
-range vs ~50 min serial). A transient model failure is retried once.
+**default 1**). Each worker owns its own Chrome on a dedicated CDP port +
+ephemeral profile and recycles it every few models — the detached spawn-cdp
+Chrome leaks memory and crashes after a handful of heavy configurator pages, so
+isolation + recycling + a one-shot retry keep a sweep reliable. A transient
+model failure is retried once.
+
+**Why concurrency defaults to 1, not higher.** Audi rate-limits/bot-scores a
+hammered IP: on 2026-08-04, the SAME code against the SAME 17 models decayed
+17/17 → 16/17 → 9/17 across repeated same-day sweeps, and a controlled check
+(`a3-sportback` alone, `AUDI_CONCURRENCY=1`) passed at 08:14 and failed 5/5 at
+10:02 — no code difference, just elapsed time and cumulative request volume.
+Failures show as `AUDI_OOPS_OR_PARSE`: the finance tab still opens, but its
+content is Audi's error page instead of the form. Running multiple browsers in
+parallel multiplies the request rate against the same config-mint and
+`FinanceApi` endpoints, so it's the more suspect setting until proven otherwise.
+Raising it back only trades wall-clock (serial: ~50 min; parallelism at 3
+brought that to ~8–9 min when it was reliable) for a real risk of a worse
+same-day sweep — don't raise it without a controlled before/after check like the
+one above.
 
 **How the finance step opens.** "Bereken uw maandprijs" is a `<button>` carrying
 `aria-label="… Opens in a new tab (or new window)"`: clicking it mints a CCF code
@@ -210,8 +224,8 @@ next time this breaks the run log already says which mechanism the site used.
 Every captured `FinanceApi` response is dumped to `data/cache/audi/` for
 calibration. `extractFromFinanceApi` parses the `Calculate` shape precisely with
 a sanity-checked heuristic fallback. Pass `AUDI_CONCURRENCY=N` to tune parallel
-browsers (lower it if the machine is memory-constrained), `AUDI_HEADFUL=1` to
-watch the browser, `AUDI_NO_CACHE=1` to bypass caching, and
+browsers (default 1 — see above; raise only with evidence it's safe),
+`AUDI_HEADFUL=1` to watch the browser, `AUDI_NO_CACHE=1` to bypass caching, and
 `AUDI_MODELS=a3-sportback[,q3-suv]` to narrow the sweep to specific models when
 debugging one car instead of all 17. `audi-capture.mjs` (repo root) captures a
 live form standalone; `scripts/audi-diagnose.mjs <model-id>` drives a single
@@ -301,7 +315,7 @@ All configuration is environment-driven and validated by Zod at startup.
 | `TESLA_CDP_PORT`     | `9223`        | port for the auto-spawned Chrome        |
 | `TESLA_CHROME`       | _auto_        | override the detected Chrome path       |
 | `VW_NO_CACHE`        | `0`           | skip the slug-discovery cache           |
-| `AUDI_CONCURRENCY`   | `3`           | parallel browsers across the model sweep |
+| `AUDI_CONCURRENCY`   | `1`           | parallel browsers across the model sweep |
 | `AUDI_HEADFUL`       | `0`           | drive the configurator visibly          |
 | `AUDI_NO_CACHE`      | `0`           | bypass the Audi cache                   |
 | `AUDI_MODELS`        | _all_         | comma-separated model ids to restrict the sweep to |
