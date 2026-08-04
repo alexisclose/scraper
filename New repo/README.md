@@ -78,6 +78,16 @@ A single `p-limit(HTTP_CONCURRENCY)` is shared across HTTP callers. Brand
 adapters that need stricter limits (BMW caps at 4 to avoid rate-limiting)
 take a `min()` against the global cap.
 
+`scrape --brand=all` runs the brands **strictly sequentially** (BMW → Mercedes →
+Tesla → VW → Audi, Audi last as the long pole). It used to overlap Audi against
+the other brands in two concurrent lanes, but that put Audi's pool of detached
+spawn-cdp Chromes alongside BMW's patchright Chromium, and Audi recycling or
+OS-killing a lane mid-flight raised CDP errors (`Network.setCacheDisabled:
+Internal server error, session closed`) that surfaced as unhandled rejections and
+took the whole run down — including a BMW sweep that was otherwise healthy.
+Sequential costs wall-clock, not offers. Parallelism *within* a brand (Audi's
+`AUDI_CONCURRENCY` browser pool, BMW's `p-limit`) is unchanged.
+
 ## Per-brand notes
 
 ### Tesla
@@ -156,6 +166,17 @@ memory and crashes after a handful of heavy configurator pages, so isolation +
 recycling + a one-shot retry keep a full sweep reliable (~8–9 min for the whole
 range vs ~50 min serial). A transient model failure is retried once.
 
+**How the finance step opens.** "Bereken uw maandprijs" is a `<button>` carrying
+`aria-label="… Opens in a new tab (or new window)"`: clicking it mints a CCF code
+server-side and opens `formsccf.audi.be/ccf/nl/finance/formulastep?code=…` in a
+**popup / new tab** — not a same-tab redirect. Because that has changed before
+(and could become an iframe), the fetcher does not trust a single lifecycle
+event: it **scans every page and every frame in the context** for the formsccf
+URL, which covers popup, new tab, same-tab navigation and iframe alike and cannot
+lose a race with a slow-loading tab. Popup/page/frame/request-failure/console
+events are still recorded, but only as `debug`-level `Audi trace:` lines, so the
+next time this breaks the run log already says which mechanism the site used.
+
 **What is scrapeable:**
 
 - **Model + total vehicle price** (gross _incl. BTW_ + net _excl. BTW_, both
@@ -190,8 +211,13 @@ Every captured `FinanceApi` response is dumped to `data/cache/audi/` for
 calibration. `extractFromFinanceApi` parses the `Calculate` shape precisely with
 a sanity-checked heuristic fallback. Pass `AUDI_CONCURRENCY=N` to tune parallel
 browsers (lower it if the machine is memory-constrained), `AUDI_HEADFUL=1` to
-watch the browser, `AUDI_NO_CACHE=1` to bypass caching. `audi-capture.mjs` (repo
-root) captures a live form standalone.
+watch the browser, `AUDI_NO_CACHE=1` to bypass caching, and
+`AUDI_MODELS=a3-sportback[,q3-suv]` to narrow the sweep to specific models when
+debugging one car instead of all 17. `audi-capture.mjs` (repo root) captures a
+live form standalone; `scripts/audi-diagnose.mjs <model-id>` drives a single
+model in a visible browser and writes a full lifecycle trace (popups, new pages,
+frame navigations, request failures, console errors, close events) to
+`data/diagnostics/`.
 
 ## Sticker-price scraper (`scrape-stickers`)
 
@@ -275,6 +301,10 @@ All configuration is environment-driven and validated by Zod at startup.
 | `TESLA_CDP_PORT`     | `9223`        | port for the auto-spawned Chrome        |
 | `TESLA_CHROME`       | _auto_        | override the detected Chrome path       |
 | `VW_NO_CACHE`        | `0`           | skip the slug-discovery cache           |
+| `AUDI_CONCURRENCY`   | `3`           | parallel browsers across the model sweep |
+| `AUDI_HEADFUL`       | `0`           | drive the configurator visibly          |
+| `AUDI_NO_CACHE`      | `0`           | bypass the Audi cache                   |
+| `AUDI_MODELS`        | _all_         | comma-separated model ids to restrict the sweep to |
 | `DATA_DIR`           | `./data`      | output root                             |
 
 ## Development

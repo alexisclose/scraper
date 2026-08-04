@@ -21,8 +21,9 @@ async function run({ logger, runId, browserConcurrency }) {
   const { context, cleanup } = await launchBmwContext();
   try {
     // BMW's public site rate-limits; cap browser concurrency lower than HTTP.
-    // `browserConcurrency` lets the all-brand two-lane runner throttle BMW
-    // further while Audi's browser pool runs alongside (see scrape.js).
+    // `browserConcurrency` is a per-run override for callers that need BMW
+    // throttled below its solo cap. `scrape --brand=all` no longer needs it (it
+    // runs the brands sequentially now), but the knob stays for other callers.
     const cap = browserConcurrency ?? config.bmw.concurrency;
     const limit = pLimit(Math.max(1, Math.min(config.http.concurrency, cap)));
     const tasks = MODEL_URLS.map((url) =>

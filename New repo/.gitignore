@@ -6,6 +6,8 @@ node_modules/
 # Run output
 data/raw/*
 data/reports/*
+data/cache/
+data/diagnostics/
 !data/raw/.gitkeep
 !data/reports/.gitkeep
 

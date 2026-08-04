@@ -10,7 +10,23 @@ import { scrapeCommand } from './commands/scrape.js';
 import { scrapeStickersCommand } from './commands/scrape-stickers.js';
 import { buildExcelCommand } from './commands/build-excel.js';
 
+// Playwright/patchright surface CDP failures for targets that die while they are
+// still being attached — e.g. `Network.setCacheDisabled: Internal server error,
+// session closed` when a popup (or the whole detached spawn-cdp Chrome) goes away
+// mid-initialisation. Those rejections belong to work we have already abandoned
+// and carry no listener of their own, so they arrive here. Exiting on them is how
+// one Audi lane recycling its browser took down an entire `scrape:all` run: the
+// process died while BMW was mid-sweep. They are logged and swallowed; every
+// other unhandled rejection stays fatal.
+const BROWSER_TEARDOWN_RX =
+  /session closed|target (?:page|browser|context)?\s*(?:closed|crashed)|protocol error|connection closed|browser has been closed|websocket|net::ERR_ABORTED|Execution context was destroyed/i;
+
 process.on('unhandledRejection', (err) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (BROWSER_TEARDOWN_RX.test(msg)) {
+    logger.warn({ msg: msg.split('\n')[0] }, 'ignored browser-teardown rejection (run continues)');
+    return;
+  }
   if (err instanceof AppError) {
     logger.warn({ code: err.code, msg: err.message }, 'unhandled AppError');
   } else {

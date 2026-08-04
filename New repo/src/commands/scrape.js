@@ -14,22 +14,20 @@ import audi from '../domains/audi/index.js';
 
 const ADAPTERS = { bmw, mercedes, tesla, vw, audi };
 
-// All-brand layout. Audi dominates wall-clock, so it gets its own lane and
-// everything else runs concurrently in a second, fully serial lane. Keeping
-// lane B serial means its browser brands (BMW, Tesla) never stack their Chromes
-// on top of each other, and the heavy ones are throttled below their solo cap so
-// peak Chrome while Audi runs stays modest. The plain `vw` adapter is pure HTTP
-// (cheap).
-const LANE_A = ['audi'];
-const LANE_B = ['bmw', 'tesla', 'mercedes', 'vw'];
-// Browser concurrency for lane B's heavy brands while they overlap Audi's pool,
-// so peak Chrome stays modest: Audi(3) + BMW(2) = 5 in the BMW window.
-const LANE_B_BMW_CONCURRENCY = 2;
-
-// Per-brand run-option overrides used only in the two-lane (all-brand) layout.
-const TWO_LANE_OPTS = {
-  bmw: { browserConcurrency: LANE_B_BMW_CONCURRENCY },
-};
+// All-brand layout: STRICTLY SEQUENTIAL.
+//
+// This used to be two concurrent lanes — Audi (the long pole) against everything
+// else. That overlapped Audi's pool of three detached spawn-cdp Chromes with
+// BMW's patchright Chromium, and the combination was unstable: Audi recycling or
+// OS-killing a lane mid-flight raised CDP errors that surfaced as unhandled
+// rejections and took the whole run down (`Network.setCacheDisabled: Internal
+// server error, session closed`) — killing BMW's in-progress sweep with it, even
+// though BMW itself was healthy.
+//
+// Audi goes LAST so the cheap, reliable brands have already produced and
+// persisted their snapshots before the heaviest browser workload starts. Running
+// serially costs wall-clock, not offers.
+const SEQUENTIAL_BRANDS = ['bmw', 'mercedes', 'tesla', 'vw', 'audi'];
 
 // A brand can break WITHOUT throwing: when a site renames an endpoint or retires
 // a model code, every input fails its own way, the adapter returns [] and the run
@@ -114,23 +112,17 @@ export const scrapeCommand = {
 
     let exitCodes;
     if (argv.brand === 'all') {
-      // Lane A (Audi, the long pole) and lane B (everything else, serial) run
-      // concurrently. allSettled so a thrown lane can't mask the other; runBrand
-      // already swallows per-brand failures into exit codes.
-      const laneA = (async () => {
-        const codes = [];
-        for (const id of LANE_A) codes.push(await runBrand(id, { runId, outDir }));
-        return codes;
-      })();
-      const laneB = (async () => {
-        const codes = [];
-        for (const id of LANE_B) {
-          codes.push(await runBrand(id, { runId, outDir, opts: TWO_LANE_OPTS[id] }));
-        }
-        return codes;
-      })();
-      const settled = await Promise.allSettled([laneA, laneB]);
-      exitCodes = settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : [1]));
+      exitCodes = [];
+      for (const id of SEQUENTIAL_BRANDS) {
+        // runBrand never throws, but keep the loop bulletproof: one brand must
+        // never prevent the remaining brands from running.
+        exitCodes.push(
+          await runBrand(id, { runId, outDir }).catch((err) => {
+            logger.error({ brand: id, err }, 'brand runner threw — continuing with the next brand');
+            return 1;
+          }),
+        );
+      }
     } else {
       exitCodes = [await runBrand(argv.brand, { runId, outDir })];
     }

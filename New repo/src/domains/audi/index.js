@@ -33,7 +33,15 @@ const CANDIDATES = JSON.parse(
   readFileSync(join(__dirname, 'data', 'candidate-codes.json'), 'utf8'),
 );
 const CANDIDATE_CODES = CANDIDATES.codes || [];
-const CANDIDATE_MODELS = CANDIDATES.models || [];
+// AUDI_MODELS=a3-sportback[,q3-suv] narrows the sweep to specific models, so a
+// single model can be debugged end-to-end without a 17-model run.
+const MODEL_FILTER = (config.audi.models || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const CANDIDATE_MODELS = (CANDIDATES.models || []).filter(
+  (m) => !MODEL_FILTER.length || MODEL_FILTER.includes(m.id),
+);
 
 // Turn a fetched finance-form result into a validated offer, or null + a logged
 // reason. Shared by both the HTTP and browser paths.
@@ -173,6 +181,16 @@ async function run({ logger, runId }) {
         });
       };
       const close = async () => {
+        // Close any pages still open BEFORE disconnecting/killing. A lane is
+        // recycled straight after a failed or timed-out model, when patchright can
+        // still be attaching request interception to a page (or to a finance popup
+        // that just opened). Killing Chrome under that attach is what surfaces as
+        // `Network.setCacheDisabled: Internal server error, session closed`.
+        // Closing the targets first, serially, lets those attaches finish or fail
+        // cleanly against a live browser.
+        for (const p of handle?.context?.pages?.() || []) {
+          if (!p.isClosed()) await p.close().catch(() => {});
+        }
         await handle?.cleanup().catch(() => {});
         // Cap the CDP close: on a wedged connection it can hang, and we must
         // always reach the OS-level kill below.
@@ -308,10 +326,15 @@ async function run({ logger, runId }) {
           nextIndex += 1;
           if (i >= CANDIDATE_MODELS.length) break;
           // One retry under contention; the serial cleanup pass does the rest.
-          await runModel(lane, CANDIDATE_MODELS[i], 2);
+          // runModel never throws, but a browser that dies between models can
+          // still reject out of lane.ready(); one lane must not sink the pool.
+          await runModel(lane, CANDIDATE_MODELS[i], 2).catch((err) => {
+            lastReason.set(CANDIDATE_MODELS[i].id, err.message || 'AUDI_LANE_ERROR');
+            logger.warn({ input: CANDIDATE_MODELS[i].id, err: err.message }, 'Audi lane error');
+          });
         }
       } finally {
-        await lane.close();
+        await lane.close().catch(() => {});
       }
     };
     await Promise.all(Array.from({ length: CONCURRENCY }, (_, w) => worker(w)));
@@ -327,10 +350,13 @@ async function run({ logger, runId }) {
       const lane = createLane(CONCURRENCY); // its own port band
       try {
         for (const model of stragglers) {
-          await runModel(lane, model, 3);
+          await runModel(lane, model, 3).catch((err) => {
+            lastReason.set(model.id, err.message || 'AUDI_LANE_ERROR');
+            logger.warn({ input: model.id, err: err.message }, 'Audi cleanup lane error');
+          });
         }
       } finally {
-        await lane.close();
+        await lane.close().catch(() => {});
       }
     }
 

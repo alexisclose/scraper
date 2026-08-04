@@ -45,6 +45,9 @@ export const configSchema = z.object({
     headful: z.boolean().default(false),
     // Number of browsers run in parallel across the model sweep.
     concurrency: intFromEnv(3),
+    // Comma-separated model ids to restrict the sweep to (debugging aid, e.g.
+    // AUDI_MODELS=a3-sportback). Empty/unset = every candidate model.
+    models: z.string().optional(),
   }),
 
   paths: z.object({

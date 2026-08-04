@@ -18,6 +18,10 @@
 import { httpFetch } from '../../libraries/http/fetch.js';
 import { parseEur } from '../../libraries/currency/parse.js';
 
+// The finance form always lives on this host, wherever it is rendered (popup,
+// same tab, or iframe).
+const FORMSCCF_RX = /formsccf\.audi\.be\/ccf/i;
+
 const HTML_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'nl-BE,nl;q=0.9',
@@ -488,189 +492,315 @@ export async function mintFromConfigurator(
     }
   };
   context.on('response', onResponse);
-  // The finance step loads in the same tab or a popup. A MUTABLE flag (rather
-  // than a one-shot promise) lets us re-click the CTA and keep waiting — the
-  // first click sometimes doesn't navigate (button not yet wired, or the click
-  // hit a tooltip copy). Listeners are detached after to avoid leaking onto the
-  // shared context.
-  let landed = null;
-  const onFrame = (frame) => {
-    if (!landed && frame === page.mainFrame() && /formsccf\.audi\.be\/ccf/i.test(frame.url())) {
-      landed = { page, url: frame.url() };
-    }
-  };
-  const onPage = async (popup) => {
-    try {
-      await popup.waitForLoadState('domcontentloaded', { timeout: timeoutMs });
-      if (!landed && /formsccf\.audi\.be\/ccf/i.test(popup.url())) {
-        landed = { page: popup, url: popup.url() };
-      }
-    } catch {
-      /* ignore */
-    }
-  };
-  page.on('framenavigated', onFrame);
-  context.on('page', onPage);
 
-  logger.info({ model: model.id, url: model.configuratorUrl }, 'Audi opening configurator');
-  await page.goto(model.configuratorUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-  await page.waitForTimeout(4000);
+  // Pages this model opened, so the leaked finance tabs that repeat clicks mint
+  // can be closed at the end without touching anything else in the shared context.
+  const ownPages = new Set([page]);
 
-  // Bail early with a clear signal if Audi served the geo/maintenance wall.
-  const title = await page.title().catch(() => '');
-  if (/not available|wartungsarbeiten|maintenance/i.test(title)) {
-    context.off('response', onResponse);
-    await page.close().catch(() => {});
-    throw new Error(`AUDI_SITE_UNAVAILABLE: configurator returned "${title}"`);
-  }
-
-  await acceptCookies(page, logger);
-  await page.waitForTimeout(2000);
-
-  // Wait for the finance CTA to render (the "Prijs aan het berekenen…" label
-  // lingers even after the price resolves, so wait on the button, not the text).
-  const berekenCta = page
-    .locator('a, button, [role="button"]')
-    .filter({ hasText: /bereken uw maandprijs/i })
-    .first();
-  await berekenCta.waitFor({ state: 'visible', timeout: 40000 }).catch(() => {});
-  await page.waitForTimeout(1500);
-
-  // Click the finance CTA and WAIT (generously — the mint + redirect can be slow)
-  // for the formsccf navigation. Only re-click after a long wait, so we don't
-  // fire a second click while the first navigation is still in flight.
-  const clickThrough = async (label) => {
-    for (let clickAttempt = 1; clickAttempt <= 3 && !landed; clickAttempt += 1) {
-      if (clickAttempt === 1) await clickVisibleByText(page, /configuratie bekijken/i);
-      await page
-        .locator('a, button, [role="button"]')
-        .filter({ hasText: /bereken uw maandprijs/i })
-        .first()
-        .waitFor({ state: 'visible', timeout: 15000 })
-        .catch(() => {});
-      const clicked = await clickVisibleByText(page, /bereken uw maandprijs/i);
-      logger[clicked ? 'info' : 'debug'](
-        { model: model.id, clickAttempt, pass: label },
-        clicked ? 'Audi clicked Bereken uw maandprijs' : 'Audi Bereken button not clickable',
-      );
-      for (let i = 0; i < 35 && !landed; i += 1) await page.waitForTimeout(1000);
-      if (!landed && clickAttempt < 3) {
-        logger.warn({ model: model.id, clickAttempt, pass: label }, 'Audi no formsccf yet — re-clicking CTA');
-      }
-    }
-  };
-  await clickThrough('stored-config');
-
-  // SELF-HEAL: the committed `pr=` configuration strings are point-in-time
-  // snapshots. When a model is facelifted (new model year / retired option codes)
-  // its stored config goes stale: the CTA still renders, but Audi's quote backend
-  // answers the click with "Onverwachte fout — technische problemen" and no code
-  // is ever minted. Verified live on q3-suv, and it affected 8 of 17 models —
-  // every one of them a recently-refreshed range (a5/a6/q3/q5).
+  // Where the finance step appears is NOT stable. Today "Bereken uw maandprijs"
+  // is a <button aria-label="… Opens in a new tab (or new window)"> that opens
+  // formsccf in a POPUP; it has previously been a same-tab redirect, and an
+  // iframe embed is equally plausible. The old detector trusted two events — a
+  // main-frame `framenavigated` on the configurator page, and `context.on(page)`
+  // whose handler awaited `waitForLoadState` BEFORE it ever looked at the URL. A
+  // popup that loaded slowly, or a `page` event that arrived while we were
+  // awaiting something else, was therefore invisible, and the run reported
+  // AUDI_NO_FORMSCCF even though the tab was sitting right there.
   //
-  // Recovery: drop the stale query, load the BARE configurator and let the SPA
-  // build a valid default configuration itself (it rewrites the URL with a fresh
-  // `pr=` within a few seconds), then jump to that fresh config's #summary step —
-  // which is where the finance CTA lives — and click through again. This keeps the
-  // committed URL as the fast path and only pays the extra page loads when it fails.
-  if (!landed) {
-    const base = model.configuratorUrl.split('?')[0].split('#')[0];
-    logger.info({ model: model.id, base }, 'Audi stored config stale — rebuilding a fresh one');
-    try {
-      await page.goto(base, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-      await acceptCookies(page, logger);
-      // Poll for the SPA to self-configure (it stamps `pr=` into the URL).
-      let fresh = null;
-      for (let i = 0; i < 20 && !fresh; i += 1) {
-        await page.waitForTimeout(1000);
-        const u = page.url();
-        if (/[?&]pr=/.test(u)) fresh = u;
-      }
-      if (fresh) {
-        await page.goto(`${fresh.split('#')[0]}#summary`, {
-          waitUntil: 'domcontentloaded',
-          timeout: timeoutMs,
-        });
-        await acceptCookies(page, logger);
-        await page.waitForTimeout(6000);
-        await clickThrough('self-healed-config');
-      } else {
-        logger.warn({ model: model.id }, 'Audi self-heal: SPA never produced a fresh configuration');
-      }
-    } catch (err) {
-      logger.warn({ model: model.id, err: err.message }, 'Audi self-heal attempt failed');
-    }
-  }
-  // Detach listeners regardless of outcome so they don't leak onto the context.
-  page.off('framenavigated', onFrame);
-  context.off('page', onPage);
-
-  if (!landed) {
-    context.off('response', onResponse);
-    await page.close().catch(() => {});
-    throw new Error('AUDI_NO_FORMSCCF: never navigated to formsccf finance form');
-  }
-
-  const finalPage = landed.page;
-  const finalUrl = landed.url;
-  const code = finalUrl.includes('code=') ? new URL(finalUrl).searchParams.get('code') : null;
-  logger.info({ model: model.id, finalUrl, code }, 'Audi reached finance form');
-
-  // Let the page settle, then drive the business-renting selection so the calc
-  // XHR fires for the right product, and give it time to come back.
-  let boundMeanings = {};
-  let downVerified = false;
-  await finalPage.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
-  await finalPage.waitForTimeout(2000);
-  if (!/\/Base\/Oops/i.test(finalUrl)) {
-    await selectBusinessRenting(finalPage, logger).catch((err) =>
-      logger.warn({ model: model.id, err: err.message }, 'Audi product selection error'),
-    );
-    // setDownPaymentPct polls for the down field, so no generous settle needed.
-    await finalPage.waitForTimeout(1500);
-
-    // Set the down payment to the configured % and let the form recalculate.
-    // setDownPaymentPct verifies the recalc landed and retries the fill itself.
-    if (downPaymentPct > 0) {
-      const set = await setDownPaymentPct(finalPage, downPaymentPct, logger, financeApi).catch(
-        (err) => {
-          logger.debug({ model: model.id, err: err.message }, 'Audi down-payment step failed');
-          return null;
-        },
-      );
-      downVerified = !!set?.verified;
-    }
-
-    // Capture the componentId → meaning map (down / residual / term / mileage)
-    // from the form so the parser can label the Calculate bounds correctly.
-    boundMeanings = await readBoundMeanings(finalPage);
-    logger.info({ model: model.id, boundMeanings, downVerified }, 'Audi bound-component meanings');
-  }
-
-  // Read the HTML defensively: the finance app re-renders after landing, which
-  // can transiently tear down the execution context. Retry content() once.
-  let html = '';
-  for (let i = 0; i < 2 && !html; i += 1) {
-    html = await finalPage.content().catch(() => '');
-    if (!html) await finalPage.waitForTimeout(2000);
-  }
-
-  context.off('response', onResponse);
-  if (finalPage !== page) await page.close().catch(() => {});
-  await finalPage.close().catch(() => {});
-
-  logger.info(
-    { model: model.id, financeApiResponses: financeApi.length, recaptchaBlocked, downVerified },
-    'Audi finance-form captured',
+  // So don't trust events for the DECISION: scan. Every page in the context,
+  // every frame of every page. One check covers popup, new tab, same-tab
+  // navigation and iframe, and it cannot miss a race.
+  //
+  // Scanning the whole context does mean a finance tab left over from an EARLIER
+  // model on this lane would look like a hit — and it would silently attribute
+  // the previous car's figures to this one. So snapshot the finance URLs that
+  // already exist before we touch anything, and never treat those as our landing.
+  const staleFinanceUrls = new Set(
+    context
+      .pages()
+      .flatMap((p) => (p.isClosed() ? [] : p.frames().map((f) => f.url())))
+      .filter((u) => FORMSCCF_RX.test(u)),
   );
-  if (!html) throw new Error('AUDI_CONTENT_UNREADABLE: finance page closed before HTML captured');
-  return {
-    code,
-    finalUrl,
-    html,
-    financeApi,
-    boundMeanings,
-    recaptchaBlocked,
-    redirectedToOops: /\/Base\/Oops/i.test(finalUrl),
+  if (staleFinanceUrls.size) {
+    logger.debug(
+      { model: model.id, stale: [...staleFinanceUrls] },
+      'Audi ignoring pre-existing finance tabs from an earlier model',
+    );
+  }
+
+  const scanForFinanceForm = () => {
+    for (const p of context.pages()) {
+      if (p.isClosed()) continue;
+      for (const f of p.frames()) {
+        const url = f.url();
+        if (!FORMSCCF_RX.test(url) || staleFinanceUrls.has(url)) continue;
+        const how = f !== p.mainFrame() ? 'iframe' : p === page ? 'same-tab' : 'popup';
+        return { page: p, frame: f, url, how };
+      }
+    }
+    return null;
   };
+
+  // Events are kept purely as DIAGNOSTICS (debug level). When this breaks again,
+  // the log already answers "popup, iframe, redirect, or nothing at all?" without
+  // needing a bespoke instrumentation run.
+  const trace = (what, data) => logger.debug({ model: model.id, ...data }, `Audi trace: ${what}`);
+  const onPopup = (p) => {
+    ownPages.add(p);
+    trace('popup opened', { url: p.url() });
+  };
+  const onNewPage = (p) => {
+    ownPages.add(p);
+    trace('context page created', { url: p.url() });
+  };
+  const onFrameNav = (f) => trace('frame navigated', { main: f === page.mainFrame(), url: f.url() });
+  const onRequestFailed = (r) => {
+    if (!/audi\.be|formsccf/i.test(r.url())) return;
+    trace('request failed', { url: r.url(), failure: r.failure()?.errorText });
+  };
+  const onConsole = (m) => {
+    if (m.type() !== 'error') return;
+    trace('console error', { text: String(m.text()).slice(0, 300) });
+  };
+  const onPageClose = () => trace('page closed', { url: page.url() });
+  page.on('popup', onPopup);
+  page.on('framenavigated', onFrameNav);
+  page.on('requestfailed', onRequestFailed);
+  page.on('console', onConsole);
+  page.on('close', onPageClose);
+  context.on('page', onNewPage);
+
+  // Detach everything we put on the SHARED context/page exactly once, before any
+  // teardown. Listeners that outlive their page are how a dead target's CDP
+  // errors end up as unhandled rejections.
+  let detached = false;
+  const detachListeners = () => {
+    if (detached) return;
+    detached = true;
+    context.off('response', onResponse);
+    context.off('page', onNewPage);
+    page.off('popup', onPopup);
+    page.off('framenavigated', onFrameNav);
+    page.off('requestfailed', onRequestFailed);
+    page.off('console', onConsole);
+    page.off('close', onPageClose);
+  };
+
+  // Teardown runs in a `finally` so NO path can leak. Previously the cleanup sat
+  // inline on the success and no-formsccf paths only, so any other throw — a
+  // `page.goto` timeout, the site-unavailable bail, an evaluate against a wedged
+  // page — left this model's listeners bound to the SHARED context and its finance
+  // tabs open. The next model on that lane then inherited them, and the leftover
+  // tab could even be mistaken for its own landing (observed: a retry "reaching"
+  // the previous attempt's code). Detach BEFORE closing — a listener that outlives
+  // its target is how a dead page's CDP error becomes an unhandled rejection — and
+  // close the tabs ONE AT A TIME, since tearing several targets down while
+  // patchright is still attaching interception to a fresh one is exactly the race
+  // behind `Network.setCacheDisabled: Internal server error, session closed`.
+  const teardown = async () => {
+    detachListeners();
+    for (const p of ownPages) {
+      if (!p.isClosed()) await p.close().catch(() => {});
+    }
+  };
+
+  let landed = null;
+  try {
+    logger.info({ model: model.id, url: model.configuratorUrl }, 'Audi opening configurator');
+    await page.goto(model.configuratorUrl, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+    await page.waitForTimeout(4000);
+
+    // Bail early with a clear signal if Audi served the geo/maintenance wall.
+    const title = await page.title().catch(() => '');
+    if (/not available|wartungsarbeiten|maintenance/i.test(title)) {
+      throw new Error(`AUDI_SITE_UNAVAILABLE: configurator returned "${title}"`);
+    }
+
+    await acceptCookies(page, logger);
+    await page.waitForTimeout(2000);
+
+    // Wait for the finance CTA to render (the "Prijs aan het berekenen…" label
+    // lingers even after the price resolves, so wait on the button, not the text).
+    const berekenCta = page
+      .locator('a, button, [role="button"]')
+      .filter({ hasText: /bereken uw maandprijs/i })
+      .first();
+    await berekenCta.waitFor({ state: 'visible', timeout: 40000 }).catch(() => {});
+    await page.waitForTimeout(1500);
+
+    // Poll the scanner rather than sleeping blind, so we react as soon as the tab
+    // exists instead of only noticing at the end of a fixed sleep. Re-scanning is
+    // cheap (it reads already-known page/frame URLs; no CDP round-trip).
+    const waitForFinanceForm = async (seconds) => {
+      for (let i = 0; i < seconds * 2 && !landed; i += 1) {
+        if (page.isClosed()) break;
+        await page.waitForTimeout(500).catch(() => {});
+        landed = scanForFinanceForm();
+      }
+      return landed;
+    };
+
+    // Click the finance CTA and WAIT (generously — the mint + popup can be slow)
+    // for the finance form to appear. Only re-click after a long wait, so we don't
+    // fire a second click while the first mint is still in flight (each extra
+    // click mints another code and another tab).
+    const clickThrough = async (label) => {
+      for (let clickAttempt = 1; clickAttempt <= 3 && !landed; clickAttempt += 1) {
+        if (clickAttempt === 1) await clickVisibleByText(page, /configuratie bekijken/i);
+        await page
+          .locator('a, button, [role="button"]')
+          .filter({ hasText: /bereken uw maandprijs/i })
+          .first()
+          .waitFor({ state: 'visible', timeout: 15000 })
+          .catch(() => {});
+        const clicked = await clickVisibleByText(page, /bereken uw maandprijs/i);
+        logger[clicked ? 'info' : 'debug'](
+          { model: model.id, clickAttempt, pass: label },
+          clicked ? 'Audi clicked Bereken uw maandprijs' : 'Audi Bereken button not clickable',
+        );
+        await waitForFinanceForm(35);
+        if (!landed && clickAttempt < 3) {
+          logger.warn(
+            {
+              model: model.id,
+              clickAttempt,
+              pass: label,
+              // Spell out what the browser DOES have, so a repeat of this failure is
+              // diagnosable straight from the run log.
+              pages: context.pages().map((p) => (p.isClosed() ? '(closed)' : p.url().slice(0, 120))),
+              mainUrl: page.url().slice(0, 120),
+            },
+            'Audi no formsccf yet — re-clicking CTA',
+          );
+        }
+      }
+    };
+    await clickThrough('stored-config');
+
+    // NOTE: do NOT add an "if the landed finance tab shows the error page, bail to
+    // the self-heal" shortcut here. It has been tried twice. It reads as an obvious
+    // win and is not: the same check also aborts the SELF-HEALED pass, and a
+    // measured run dropped 16 -> 9 offers while staying just as slow. The retry
+    // budget is the price of the recovery. (A model whose form errors mid-flow —
+    // q3-sportback, at time of writing — fails identically with and without the
+    // shortcut, so it buys nothing even in the case that motivates it.)
+
+    // SELF-HEAL: the committed `pr=` configuration strings are point-in-time
+    // snapshots. When a model is facelifted (new model year / retired option codes)
+    // its stored config goes stale: the CTA still renders, but Audi's quote backend
+    // answers the click with "Onverwachte fout — technische problemen" and no code
+    // is ever minted. Verified live on q3-suv, and it affected 8 of 17 models —
+    // every one of them a recently-refreshed range (a5/a6/q3/q5).
+    //
+    // Recovery: drop the stale query, load the BARE configurator and let the SPA
+    // build a valid default configuration itself (it rewrites the URL with a fresh
+    // `pr=` within a few seconds), then jump to that fresh config's #summary step —
+    // which is where the finance CTA lives — and click through again. This keeps the
+    // committed URL as the fast path and only pays the extra page loads when it fails.
+    if (!landed) {
+      const base = model.configuratorUrl.split('?')[0].split('#')[0];
+      logger.info({ model: model.id, base }, 'Audi stored config stale — rebuilding a fresh one');
+      try {
+        await page.goto(base, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+        await acceptCookies(page, logger);
+        // Poll for the SPA to self-configure (it stamps `pr=` into the URL).
+        let fresh = null;
+        for (let i = 0; i < 20 && !fresh; i += 1) {
+          await page.waitForTimeout(1000);
+          const u = page.url();
+          if (/[?&]pr=/.test(u)) fresh = u;
+        }
+        if (fresh) {
+          await page.goto(`${fresh.split('#')[0]}#summary`, {
+            waitUntil: 'domcontentloaded',
+            timeout: timeoutMs,
+          });
+          await acceptCookies(page, logger);
+          await page.waitForTimeout(6000);
+          await clickThrough('self-healed-config');
+        } else {
+          logger.warn({ model: model.id }, 'Audi self-heal: SPA never produced a fresh configuration');
+        }
+      } catch (err) {
+        logger.warn({ model: model.id, err: err.message }, 'Audi self-heal attempt failed');
+      }
+    }
+    if (!landed) {
+      throw new Error('AUDI_NO_FORMSCCF: never navigated to formsccf finance form');
+    }
+
+    // If the form rendered inside an IFRAME we cannot drive it with page-level
+    // helpers (they query the top document). Re-open the same URL in a page of our
+    // own instead — the CCF code lives in the URL, so the form is fully functional
+    // there and every downstream step works unchanged.
+    if (landed.how === 'iframe') {
+      logger.warn({ model: model.id, url: landed.url }, 'Audi finance form is iframed — reopening it standalone');
+      const own = await context.newPage();
+      ownPages.add(own);
+      await own.goto(landed.url, { waitUntil: 'domcontentloaded', timeout: timeoutMs }).catch(() => {});
+      landed = { page: own, url: own.url(), how: 'reopened-iframe' };
+    }
+
+    const finalPage = landed.page;
+    const finalUrl = landed.url;
+    ownPages.add(finalPage);
+    const code = finalUrl.includes('code=') ? new URL(finalUrl).searchParams.get('code') : null;
+    logger.info({ model: model.id, finalUrl, code, how: landed.how }, 'Audi reached finance form');
+
+    // Let the page settle, then drive the business-renting selection so the calc
+    // XHR fires for the right product, and give it time to come back.
+    let boundMeanings = {};
+    let downVerified = false;
+    await finalPage.waitForLoadState('domcontentloaded', { timeout: timeoutMs }).catch(() => {});
+    await finalPage.waitForTimeout(2000);
+    if (!/\/Base\/Oops/i.test(finalUrl)) {
+      await selectBusinessRenting(finalPage, logger).catch((err) =>
+        logger.warn({ model: model.id, err: err.message }, 'Audi product selection error'),
+      );
+      // setDownPaymentPct polls for the down field, so no generous settle needed.
+      await finalPage.waitForTimeout(1500);
+
+      // Set the down payment to the configured % and let the form recalculate.
+      // setDownPaymentPct verifies the recalc landed and retries the fill itself.
+      if (downPaymentPct > 0) {
+        const set = await setDownPaymentPct(finalPage, downPaymentPct, logger, financeApi).catch(
+          (err) => {
+            logger.debug({ model: model.id, err: err.message }, 'Audi down-payment step failed');
+            return null;
+          },
+        );
+        downVerified = !!set?.verified;
+      }
+
+      // Capture the componentId → meaning map (down / residual / term / mileage)
+      // from the form so the parser can label the Calculate bounds correctly.
+      boundMeanings = await readBoundMeanings(finalPage);
+      logger.info({ model: model.id, boundMeanings, downVerified }, 'Audi bound-component meanings');
+    }
+
+    // Read the HTML defensively: the finance app re-renders after landing, which
+    // can transiently tear down the execution context. Retry content() once.
+    let html = '';
+    for (let i = 0; i < 2 && !html; i += 1) {
+      html = await finalPage.content().catch(() => '');
+      if (!html) await finalPage.waitForTimeout(2000);
+    }
+
+    logger.info(
+      { model: model.id, financeApiResponses: financeApi.length, recaptchaBlocked, downVerified },
+      'Audi finance-form captured',
+    );
+    if (!html) throw new Error('AUDI_CONTENT_UNREADABLE: finance page closed before HTML captured');
+    return {
+      code,
+      finalUrl,
+      html,
+      financeApi,
+      boundMeanings,
+      recaptchaBlocked,
+      redirectedToOops: /\/Base\/Oops/i.test(finalUrl),
+    };
+  } finally {
+    await teardown();
+  }
 }
